@@ -295,6 +295,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
               <RatingCell
                 v-else-if="cell.column.id === 'rating'"
                 :value="rows[vRow.index].original.rating"
+                :track-id="rows[vRow.index].original.id"
               />
               <TagCell
                 v-else-if="cell.column.id === 'tags'"
