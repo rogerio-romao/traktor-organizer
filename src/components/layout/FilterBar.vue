@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
+import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import { formatKey, OPEN_KEY_TO_STANDARD } from '../../utils/constants'
 
 const tracksStore = useTracksStore()
+const { open: openPlaylistSave } = usePlaylistSave()
+
+function saveAsPlaylist() {
+  const ids = tracksStore.filteredTracks.map(t => t.id)
+  openPlaylistSave('', ids)
+}
 
 const genres = computed(() => {
   const unique = new Set(tracksStore.allTracks.map(t => t.genre).filter(Boolean))
@@ -81,6 +88,10 @@ const hasAnyFilter = computed(() =>
     <button v-if="hasAnyFilter" class="filters-clear" @click="tracksStore.clearFilters()">
       Clear all
     </button>
+
+    <button class="btn-save-playlist" title="Save current results as a playlist" @click="saveAsPlaylist">
+      ⊕ Save as playlist
+    </button>
   </div>
 </template>
 
@@ -89,7 +100,7 @@ const hasAnyFilter = computed(() =>
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 12px;
+  padding: 5px 6px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -175,4 +186,23 @@ const hasAnyFilter = computed(() =>
   flex-shrink: 0;
 }
 .filters-clear:hover { color: var(--text-primary); }
+
+.btn-save-playlist {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 26px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-save-playlist:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 </style>

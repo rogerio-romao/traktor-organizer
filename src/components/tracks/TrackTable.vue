@@ -405,6 +405,20 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
   overflow: auto;
   overscroll-behavior: none;
 }
+.table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+.table-scroll::-webkit-scrollbar-corner {
+  background: var(--bg-primary);
+}
 
 /* ── Header ─────────────────────────────── */
 .table-head {

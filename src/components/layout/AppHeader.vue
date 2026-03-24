@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
 import { useTagsStore } from '../../stores/tags'
-import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import { useContextMenu } from '../../composables/useContextMenu'
 import { useSidebar } from '../../composables/useSidebar'
 import ImportDialog from '../common/ImportDialog.vue'
@@ -11,7 +10,6 @@ import type { ImportStats } from '../../composables/useImport'
 const tracksStore = useTracksStore()
 const tagsStore = useTagsStore()
 const importDialog = ref<InstanceType<typeof ImportDialog> | null>(null)
-const { open: openPlaylistSave } = usePlaylistSave()
 const { show: showContextMenu } = useContextMenu()
 const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar()
 
@@ -20,10 +18,6 @@ async function onImported(_stats: ImportStats) {
   await tagsStore.loadAllTags()
 }
 
-function onSaveSearchAsPlaylist() {
-  const ids = tracksStore.filteredTracks.map(t => t.id)
-  openPlaylistSave(tracksStore.globalSearch.trim(), ids)
-}
 
 function onHeaderContextMenu(e: MouseEvent) {
   if (!import.meta.env.DEV) return
@@ -55,16 +49,14 @@ function onHeaderContextMenu(e: MouseEvent) {
           class="search-input"
           type="text"
           placeholder="Search tracks…"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
         />
         <button
           v-if="tracksStore.globalSearch"
-          class="btn-save-playlist"
-          title="Save as playlist"
-          @click="onSaveSearchAsPlaylist"
-        >⊕</button>
-        <button
-          v-if="tracksStore.globalSearch"
           class="search-clear"
+          title="Clear search"
           @click="tracksStore.globalSearch = ''"
         >✕</button>
       </div>
@@ -72,7 +64,7 @@ function onHeaderContextMenu(e: MouseEvent) {
 
     <div class="header-right">
       <button class="btn-import" @click="importDialog?.open()">
-        Import NML
+        Import playlist
       </button>
     </div>
   </header>
@@ -101,7 +93,7 @@ function onHeaderContextMenu(e: MouseEvent) {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 14px;
+  font-size: 18px;
   padding: 2px 6px 2px 0;
   line-height: 1;
   cursor: pointer;
@@ -131,14 +123,14 @@ function onHeaderContextMenu(e: MouseEvent) {
   position: absolute;
   left: 9px;
   color: var(--text-secondary);
-  font-size: 15px;
+  font-size: 20px;
   pointer-events: none;
 }
 
 .search-input {
   width: 100%;
   height: 30px;
-  padding: 0 52px 0 30px;
+  padding: 0 28px 0 30px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -149,17 +141,6 @@ function onHeaderContextMenu(e: MouseEvent) {
 .search-input::placeholder { color: var(--text-secondary); }
 .search-input:focus { border-color: var(--accent); }
 
-.btn-save-playlist {
-  position: absolute;
-  right: 26px;
-  background: none;
-  border: none;
-  color: var(--accent);
-  font-size: 14px;
-  padding: 2px;
-  line-height: 1;
-}
-.btn-save-playlist:hover { color: var(--accent-dim); }
 
 .search-clear {
   position: absolute;
@@ -167,7 +148,7 @@ function onHeaderContextMenu(e: MouseEvent) {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-size: 10px;
+  font-size: 15px;
   padding: 2px;
   line-height: 1;
 }

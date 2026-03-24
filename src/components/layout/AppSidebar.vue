@@ -94,7 +94,8 @@ function startResize(e: MouseEvent) {
 
 .tab-btn {
   flex: 1;
-  height: 34px;
+  height: 40px;
+  position: relative;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -102,8 +103,18 @@ function startResize(e: MouseEvent) {
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
+}
+.tab-btn + .tab-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  height: 50%;
+  width: 1px;
+  background: var(--border);
 }
 .tab-btn:hover { color: var(--text-primary); }
 .tab-btn.active {
