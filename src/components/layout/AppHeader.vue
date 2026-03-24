@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import { useContextMenu } from '../../composables/useContextMenu'
+import { useSidebar } from '../../composables/useSidebar'
 import ImportDialog from '../common/ImportDialog.vue'
 import type { ImportStats } from '../../composables/useImport'
 
@@ -10,6 +11,7 @@ const tracksStore = useTracksStore()
 const importDialog = ref<InstanceType<typeof ImportDialog> | null>(null)
 const { open: openPlaylistSave } = usePlaylistSave()
 const { show: showContextMenu } = useContextMenu()
+const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar()
 
 async function onImported(_stats: ImportStats) {
   await tracksStore.loadAllTracks()
@@ -33,6 +35,12 @@ function onHeaderContextMenu(e: MouseEvent) {
 <template>
   <header class="app-header">
     <div class="header-left" @contextmenu="onHeaderContextMenu">
+      <button
+        class="btn-sidebar-toggle"
+        :class="{ active: sidebarOpen }"
+        title="Toggle sidebar"
+        @click="toggleSidebar"
+      >&#9776;</button>
       <span class="app-name">Traktor Organizer</span>
     </div>
 
@@ -85,6 +93,18 @@ function onHeaderContextMenu(e: MouseEvent) {
   flex-shrink: 0;
   min-width: 160px;
 }
+
+.btn-sidebar-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 2px 6px 2px 0;
+  line-height: 1;
+  cursor: pointer;
+}
+.btn-sidebar-toggle:hover,
+.btn-sidebar-toggle.active { color: var(--text-primary); }
 
 .app-name {
   font-size: 13px;
