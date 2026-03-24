@@ -13,6 +13,7 @@ const isOpen = ref(false)
 function open() {
   isOpen.value = true
   stats.value = null
+  error.value = null
 }
 
 function close() {
@@ -80,6 +81,10 @@ defineExpose({ open })
                 <span class="stat-value">{{ stats.updated.toLocaleString() }}</span>
               </div>
             </div>
+            <p v-if="stats.inserted === 0 && stats.updated === 0 && !error" class="all-up-to-date">
+              Collection is already up to date.
+            </p>
+            <p v-if="error" class="error-msg">{{ error }}</p>
           </template>
         </div>
 
@@ -221,6 +226,13 @@ defineExpose({ open })
 .stat-value { color: var(--text-primary, #e0e0e0); font-weight: 600; }
 .stat-row.new .stat-value { color: #5cb85c; }
 .stat-row.updated .stat-value { color: var(--accent, #ff6600); }
+
+.all-up-to-date {
+  font-size: 12px;
+  color: #5cb85c;
+  margin: 0;
+  text-align: center;
+}
 
 .dialog-footer {
   display: flex;

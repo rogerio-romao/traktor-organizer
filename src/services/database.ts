@@ -39,6 +39,10 @@ export async function runStartupMaintenance(): Promise<void> {
     `DELETE FROM tags WHERE name IN (${placeholders})`,
     names,
   )
+  // Remove any tags that are no longer associated with any track
+  await database.execute(
+    `DELETE FROM tags WHERE NOT EXISTS (SELECT 1 FROM track_tags WHERE tag_id = tags.id)`,
+  )
 }
 
 export async function savePlaylist(name: string, trackIds: number[]): Promise<void> {

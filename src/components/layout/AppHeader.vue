@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
+import { useTagsStore } from '../../stores/tags'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import { useContextMenu } from '../../composables/useContextMenu'
 import { useSidebar } from '../../composables/useSidebar'
@@ -8,6 +9,7 @@ import ImportDialog from '../common/ImportDialog.vue'
 import type { ImportStats } from '../../composables/useImport'
 
 const tracksStore = useTracksStore()
+const tagsStore = useTagsStore()
 const importDialog = ref<InstanceType<typeof ImportDialog> | null>(null)
 const { open: openPlaylistSave } = usePlaylistSave()
 const { show: showContextMenu } = useContextMenu()
@@ -15,6 +17,7 @@ const { isOpen: sidebarOpen, toggle: toggleSidebar } = useSidebar()
 
 async function onImported(_stats: ImportStats) {
   await tracksStore.loadAllTracks()
+  await tagsStore.loadAllTags()
 }
 
 function onSaveSearchAsPlaylist() {

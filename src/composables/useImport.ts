@@ -80,7 +80,10 @@ export function useImport() {
 
       progressLabel.value = `Done — ${stats.inserted} new, ${stats.updated} updated`
     } catch (e) {
-      error.value = e instanceof Error ? e.message : String(e)
+      // Log the real error for debugging; show a generic message to the user.
+      // TODO: add error reporting (e.g. Sentry) to capture these in production.
+      console.error('[Import error]', e)
+      error.value = 'Something went wrong during the import. Please try again.'
     } finally {
       isImporting.value = false
     }
@@ -93,8 +96,6 @@ export function useImport() {
 
 // ─── DB insertion ────────────────────────────────────────────────────────────
 
-const BATCH_SIZE = 100
-
 async function insertTracks(
   tracks: ParsedTrack[],
   stats: ImportStats,
@@ -103,21 +104,9 @@ async function insertTracks(
 ): Promise<void> {
   const db = await getDb()
 
-  for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-    const batch = tracks.slice(i, i + BATCH_SIZE)
-
-    await db.execute('BEGIN')
-    try {
-      for (const track of batch) {
-        await upsertTrack(db, track, stats, tagBlocklist)
-      }
-      await db.execute('COMMIT')
-    } catch (e) {
-      await db.execute('ROLLBACK')
-      throw e
-    }
-
-    onProgress(Math.min(i + BATCH_SIZE, tracks.length))
+  for (let i = 0; i < tracks.length; i++) {
+    await upsertTrack(db, tracks[i], stats, tagBlocklist)
+    onProgress(i + 1)
   }
 }
 
@@ -135,7 +124,7 @@ async function upsertTrack(
 
   if (existing.length > 0) {
     // Existing track: update display-only fields, preserve editable fields (genre, rating, tags)
-    await db.execute(
+    const result = await db.execute(
       `UPDATE tracks SET
         title = $1, artist = $2, album = $3,
         bpm = $4, musical_key = $5, musical_key_value = $6,
@@ -147,7 +136,18 @@ async function upsertTrack(
         bpm_quality = $23, key_lyrics = $24, flags = $25,
         cover_art_id = $26, comment_raw = $27, import_date = $28, audio_id = $29,
         updated_at = datetime('now')
-      WHERE file_path = $30`,
+      WHERE file_path = $30
+        AND (
+          title IS NOT $1 OR artist IS NOT $2 OR album IS NOT $3 OR
+          bpm IS NOT $4 OR musical_key IS NOT $5 OR musical_key_value IS NOT $6 OR
+          duration IS NOT $7 OR duration_float IS NOT $8 OR
+          label IS NOT $9 OR remixer IS NOT $10 OR producer IS NOT $11 OR release_date IS NOT $12 OR
+          mix IS NOT $13 OR catalog_no IS NOT $14 OR bitrate IS NOT $15 OR filesize IS NOT $16 OR
+          play_count IS NOT $17 OR last_played IS NOT $18 OR color IS NOT $19 OR
+          loudness_peak IS NOT $20 OR loudness_perceived IS NOT $21 OR loudness_analyzed IS NOT $22 OR
+          bpm_quality IS NOT $23 OR key_lyrics IS NOT $24 OR flags IS NOT $25 OR
+          cover_art_id IS NOT $26 OR comment_raw IS NOT $27 OR import_date IS NOT $28 OR audio_id IS NOT $29
+        )`,
       [
         track.title, track.artist, track.album,
         track.bpm, track.musicalKey, track.musicalKeyValue,
@@ -161,7 +161,14 @@ async function upsertTrack(
         track.filePath,
       ],
     )
-    stats.updated++
+    // Re-sync tags from NML on update too (additive only — INSERT OR IGNORE won't
+    // duplicate existing tags or remove ones added manually in the app)
+    await insertTags(db, existing[0].id, track.commentRaw, tagBlocklist)
+    if (result.rowsAffected > 0) {
+      stats.updated++
+    } else {
+      stats.skipped++
+    }
   } else {
     // New track: full insert including genre and rating from NML
     const result = await db.execute(
@@ -211,15 +218,10 @@ async function insertTags(
   const tags = splitCommentIntoTags(commentRaw, tagBlocklist)
   for (const name of tags) {
     await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [name])
-    const rows = await db.select<{ id: number }[]>(
-      'SELECT id FROM tags WHERE name = $1',
-      [name],
+    await db.execute(
+      `INSERT OR IGNORE INTO track_tags (track_id, tag_id)
+       SELECT $1, id FROM tags WHERE name = $2`,
+      [trackId, name],
     )
-    if (rows[0]) {
-      await db.execute(
-        'INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES ($1, $2)',
-        [trackId, rows[0].id],
-      )
-    }
   }
 }

@@ -15,6 +15,11 @@ const { open: openTagEditor } = useTagEditor()
 const tracksStore = useTracksStore()
 const tagsStore = useTagsStore()
 
+async function removeTag(tag: string) {
+  await tracksStore.removeTagFromTrack(props.trackId, tag)
+  await tagsStore.loadAllTags()
+}
+
 function onTagRightClick(tag: string, e: MouseEvent) {
   show(e.clientX, e.clientY, [
     {
@@ -46,7 +51,10 @@ function onTagRightClick(tag: string, e: MouseEvent) {
       class="tag-pill"
       :style="{ background: getTagColor(tag).bg, borderColor: getTagColor(tag).border }"
       @contextmenu.prevent="onTagRightClick(tag, $event)"
-    >{{ tag }}</span>
+    >
+      {{ tag }}
+      <button class="pill-remove" @click.stop="removeTag(tag)">✕</button>
+    </span>
     <button class="tag-edit-btn" title="Edit tags" @click.stop="openTagEditor(trackId)">+</button>
   </div>
 </template>
@@ -63,8 +71,10 @@ function onTagRightClick(tag: string, e: MouseEvent) {
   height: 100%;
 }
 .tag-pill {
-  display: inline-block;
-  padding: 2px 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px 2px 7px;
   border-radius: 4px;
   border: 1px solid transparent;
   font-size: 9px;
@@ -74,6 +84,20 @@ function onTagRightClick(tag: string, e: MouseEvent) {
   white-space: nowrap;
   line-height: 16px;
   color: var(--text-primary, #e0e0e0);
+}
+.pill-remove {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transform: translateY(-1px);
+}
+.pill-remove:hover {
+  color: var(--text-primary);
 }
 .tag-edit-btn {
   flex-shrink: 0;

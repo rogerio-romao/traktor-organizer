@@ -140,6 +140,12 @@ export const useTracksStore = defineStore('tracks', () => {
          AND tag_id = (SELECT id FROM tags WHERE name = $2)`,
       [trackId, tagName],
     )
+    // Remove the tag row itself if no tracks use it anymore
+    await db.execute(
+      `DELETE FROM tags WHERE name = $1
+         AND NOT EXISTS (SELECT 1 FROM track_tags WHERE tag_id = (SELECT id FROM tags WHERE name = $1))`,
+      [tagName],
+    )
     const track = allTracks.value.find(t => t.id === trackId)
     if (track) {
       track.tags = track.tags.filter(t => t !== tagName)
