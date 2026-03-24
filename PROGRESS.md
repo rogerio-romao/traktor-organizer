@@ -67,6 +67,38 @@ so it ran the old compiled version. Start session by running `pnpm tauri dev` an
 
 ---
 
+## Phase 1.5: Polish + Foundation — NOT STARTED
+
+### 1. Column reordering
+- Drag and drop columns left/right in the table header
+- All columns draggable except `#` (row number) and cover art
+- Persist column order in `localStorage`
+
+### 2. Right-click context menu + playlist creation
+- Global: suppress default browser context menu, build a Vue context menu component
+- In development builds only: context menu includes a divider + "Reload" and "Inspect Element" at the bottom
+- **Tag right-click menu:**
+  - "Export as playlist" — filters by that tag, opens export dialog with tag name as default playlist name (editable)
+  - "Add to tag blocklist" — adds the tag to the `tag_blocklist` table and removes it from all tracks immediately
+- **Playlist from current filter/search:**
+  - Small icon button next to the search field, only active when a search is active
+  - Clicking it opens the export playlist dialog with the search term as the default name (editable)
+- Export dialog is shared between both flows (phase 3 NML export will plug into the same dialog)
+
+### 3. Tag visual style
+- Display tag text in ALL CAPS in the UI (no DB change, CSS only)
+- Restyle tag pills: darker inset background, slightly glowing/contrasting text, more badge-like (reference: rounded rectangle, not flat chip)
+- Keep per-tag color system, just update the shape and text transform
+
+### 4. Track blocklist
+- Add `track_blocklist` table (block tracks by artist name) — migration `003_track_blocklist.sql`
+- Seed with `Native Instruments` as the first entry
+- Tracks matching a blocklisted artist are still imported (for NML round-trip integrity) but hidden in the UI
+- Filter blocked tracks out in the Pinia store (`filteredTracks`) so they never appear in the table
+- In `useImport.ts` and `database.ts`, rename the local variable `blocklist` → `tagBlocklist` to distinguish from the new `trackBlocklist`
+
+---
+
 ## Phase 2: Editing + Filtering — NOT STARTED
 
 1. Tag editing: `TagEditor.vue` (popover/modal with add/remove), autocomplete from existing tags

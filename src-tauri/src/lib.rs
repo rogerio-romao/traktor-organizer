@@ -37,6 +37,12 @@ pub fn run() {
             sql: include_str!("../migrations/002_tag_blocklist.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 3,
+            description: "create_track_blocklist",
+            sql: include_str!("../migrations/003_track_blocklist.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

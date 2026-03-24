@@ -66,9 +66,9 @@ export const useTracksStore = defineStore('tracks', () => {
     try {
       const db = await getDb()
 
-      // Step 1: load all track rows
+      // Step 1: load all track rows, excluding blocklisted artists
       const rows = await db.select<TrackDbRow[]>(
-        'SELECT * FROM tracks ORDER BY artist ASC, title ASC',
+        'SELECT * FROM tracks WHERE artist NOT IN (SELECT artist_name FROM track_blocklist) ORDER BY artist ASC, title ASC',
       )
 
       // Step 2: load all track-tag associations in one query

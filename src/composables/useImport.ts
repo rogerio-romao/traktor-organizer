@@ -72,8 +72,8 @@ export function useImport() {
       stats.total = tracks.length
 
       progressLabel.value = `Importing ${stats.total} tracks…`
-      const blocklist = await getTagBlocklist()
-      await insertTracks(tracks, stats, blocklist, (done) => {
+      const tagBlocklist = await getTagBlocklist()
+      await insertTracks(tracks, stats, tagBlocklist, (done) => {
         progress.value = Math.round((done / stats.total) * 100)
         progressLabel.value = `Importing track ${done} of ${stats.total}…`
       })
@@ -98,7 +98,7 @@ const BATCH_SIZE = 100
 async function insertTracks(
   tracks: ParsedTrack[],
   stats: ImportStats,
-  blocklist: Set<string>,
+  tagBlocklist: Set<string>,
   onProgress: (done: number) => void,
 ): Promise<void> {
   const db = await getDb()
@@ -109,7 +109,7 @@ async function insertTracks(
     await db.execute('BEGIN')
     try {
       for (const track of batch) {
-        await upsertTrack(db, track, stats, blocklist)
+        await upsertTrack(db, track, stats, tagBlocklist)
       }
       await db.execute('COMMIT')
     } catch (e) {
@@ -125,7 +125,7 @@ async function upsertTrack(
   db: Awaited<ReturnType<typeof getDb>>,
   track: ParsedTrack,
   stats: ImportStats,
-  blocklist: Set<string>,
+  tagBlocklist: Set<string>,
 ): Promise<void> {
   // Check if track already exists (match by file path)
   const existing = await db.select<{ id: number }[]>(
@@ -197,7 +197,7 @@ async function upsertTrack(
     )
 
     const trackId = result.lastInsertId ?? 0
-    if (trackId) await insertTags(db, trackId, track.commentRaw, blocklist)
+    if (trackId) await insertTags(db, trackId, track.commentRaw, tagBlocklist)
     stats.inserted++
   }
 }
@@ -206,9 +206,9 @@ async function insertTags(
   db: Awaited<ReturnType<typeof getDb>>,
   trackId: number,
   commentRaw: string,
-  blocklist: Set<string>,
+  tagBlocklist: Set<string>,
 ): Promise<void> {
-  const tags = splitCommentIntoTags(commentRaw, blocklist)
+  const tags = splitCommentIntoTags(commentRaw, tagBlocklist)
   for (const name of tags) {
     await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [name])
     const rows = await db.select<{ id: number }[]>(

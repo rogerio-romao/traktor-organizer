@@ -11,6 +11,12 @@ export async function getDb(): Promise<Database> {
   return db
 }
 
+export async function getTrackBlocklist(): Promise<Set<string>> {
+  const database = await getDb()
+  const rows = await database.select<{ artist_name: string }[]>('SELECT artist_name FROM track_blocklist')
+  return new Set(rows.map(r => r.artist_name))
+}
+
 export async function getTagBlocklist(): Promise<Set<string>> {
   const database = await getDb()
   const rows = await database.select<{ name: string }[]>('SELECT name FROM tag_blocklist')
