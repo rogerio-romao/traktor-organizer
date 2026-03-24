@@ -8,7 +8,7 @@ import { formatKey } from '../../utils/constants'
 
 const tracksStore = useTracksStore()
 const { open: openPlaylistSave } = usePlaylistSave()
-const { activePlaylist, playlistTracks, hasRemovals, updatePlaylist } = usePlaylistView()
+const { activePlaylist, playlistTracks, hasRemovals, hasPendingUpdate, updatePlaylist } = usePlaylistView()
 
 // Genre/key source: playlist tracks when viewing a playlist, full collection otherwise
 const sourceTracks = computed(() => activePlaylist.value ? playlistTracks.value : tracksStore.allTracks)
@@ -33,34 +33,46 @@ const hasAnyFilter = computed(() =>
   tracksStore.ratingFilter !== null,
 )
 
-// "Update playlist" is active when tracks were removed or a filter is narrowing the view
+// "Update playlist" is active when tracks were removed, a filter is applied, or a suggested update was accepted
 const isModified = computed(() =>
-  !!activePlaylist.value && (hasRemovals.value || hasAnyFilter.value || !!tracksStore.globalSearch.trim())
+  !!activePlaylist.value && (hasRemovals.value || hasPendingUpdate.value || hasAnyFilter.value || !!tracksStore.globalSearch.trim())
 )
 
 function getDefaultPlaylistName(): string {
-  const activeCount = [
-    !!tracksStore.globalSearch.trim(),
-    tracksStore.genreFilter !== null,
-    tracksStore.keyFilter !== null,
-    tracksStore.ratingFilter !== null,
-    tracksStore.activeTagFilters.length > 0,
-  ].filter(Boolean).length
+  const hasSearch = !!tracksStore.globalSearch.trim()
+  const hasGenre  = tracksStore.genreFilter !== null
+  const hasKey    = tracksStore.keyFilter !== null
+  const hasRating = tracksStore.ratingFilter !== null
+  const tagCount  = tracksStore.activeTagFilters.length
+  const nonTagCount = [hasSearch, hasGenre, hasKey, hasRating].filter(Boolean).length
 
-  if (activeCount !== 1) return ''
+  // Any number of tags with no other filters → join with '-'
+  if (nonTagCount === 0 && tagCount > 0) return tracksStore.activeTagFilters.join('-')
 
-  if (tracksStore.globalSearch.trim()) return tracksStore.globalSearch.trim()
-  if (tracksStore.genreFilter) return tracksStore.genreFilter
-  if (tracksStore.keyFilter) return `${formatKey(tracksStore.keyFilter, 'standard')} Scale`
-  if (tracksStore.ratingFilter) return `${tracksStore.ratingFilter}+ Stars`
-  if (tracksStore.activeTagFilters.length === 1) return tracksStore.activeTagFilters[0]
+  // Single non-tag filter with no tags → derive name from that filter
+  if (nonTagCount === 1 && tagCount === 0) {
+    if (hasSearch) return tracksStore.globalSearch.trim()
+    if (hasGenre)  return tracksStore.genreFilter!
+    if (hasKey)    return `${formatKey(tracksStore.keyFilter!, 'standard')} Scale`
+    if (hasRating) return `${tracksStore.ratingFilter}+ Stars`
+  }
 
   return ''
 }
 
 function saveAsPlaylist() {
   const ids = displayTracks.value.map(t => t.id)
-  openPlaylistSave(getDefaultPlaylistName(), ids)
+  const filters = {
+    globalSearch: tracksStore.globalSearch,
+    activeTagFilters: [...tracksStore.activeTagFilters],
+    genreFilter: tracksStore.genreFilter,
+    keyFilter: tracksStore.keyFilter,
+    ratingFilter: tracksStore.ratingFilter,
+  }
+  // Only save filter state when at least one filter is active (otherwise re-running would always match everything)
+  const hasFilters = !!filters.globalSearch.trim() || filters.activeTagFilters.length > 0 ||
+    filters.genreFilter !== null || filters.keyFilter !== null || filters.ratingFilter !== null
+  openPlaylistSave(getDefaultPlaylistName(), ids, hasFilters ? filters : undefined)
 }
 
 async function handleUpdatePlaylist() {

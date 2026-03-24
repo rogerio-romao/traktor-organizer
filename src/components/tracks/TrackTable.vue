@@ -32,7 +32,7 @@ import RatingCell from './RatingCell.vue'
 import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
-const { activePlaylist, removeTrack } = usePlaylistView()
+const { activePlaylist, suggestedTracks, applySuggestedUpdate, removeTrack } = usePlaylistView()
 const { show: showContextMenu } = useContextMenu()
 const { confirm } = useConfirm()
 
@@ -290,6 +290,16 @@ const isLoading = computed(() =>
   props.tracks !== undefined ? (props.loading ?? false) : tracksStore.isLoading
 )
 
+const driftMessage = computed(() => {
+  if (!suggestedTracks.value || !activePlaylist.value) return null
+  const saved   = activePlaylist.value.trackCount
+  const fresh   = suggestedTracks.value.length
+  const diff    = fresh - saved
+  if (diff > 0)  return `Your current track collection would now match +${diff} tracks in this playlist.`
+  if (diff < 0)  return `Your current track collection would now match ${diff} tracks in this playlist.`
+  return `Your current track collection matches different tracks to this playlist than you currently have.`
+})
+
 // ── Virtualizer ───────────────────────────────────────────────────────────────
 const rows       = computed(() => table.getRowModel().rows)
 const headerGroups = computed(() => table.getHeaderGroups())
@@ -436,7 +446,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
     </div>
     </div>
 
-    <!-- Footer count -->
+    <!-- Footer count + optional drift notice inline -->
     <div class="table-footer">
       {{ rows.length.toLocaleString() }} tracks
       <template v-if="props.tracks && props.tracks.length !== rows.length">
@@ -444,6 +454,12 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
       </template>
       <template v-else-if="!props.tracks && tracksStore.filteredTracks.length !== tracksStore.allTracks.length">
         of {{ tracksStore.allTracks.length.toLocaleString() }}
+      </template>
+
+      <template v-if="driftMessage">
+        <span class="footer-drift-sep">·</span>
+        <span class="footer-drift-msg">{{ driftMessage }}</span>
+        <button class="footer-drift-btn" @click="applySuggestedUpdate">Apply</button>
       </template>
     </div>
   </div>
@@ -605,13 +621,41 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
 /* ── Footer ─────────────────────────────── */
 .table-footer {
   flex-shrink: 0;
-  height: 26px;
+  height: 30px;
   display: flex;
   align-items: center;
+  gap: 6px;
   padding: 0 12px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
   border-top: 1px solid var(--border);
   background: var(--bg-secondary);
+  overflow: hidden;
 }
+
+.footer-drift-sep {
+  opacity: 0.4;
+}
+
+.footer-drift-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+.footer-drift-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 0 8px;
+  height: 18px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.footer-drift-btn:hover { background: rgba(255, 102, 0, 0.12); }
 </style>

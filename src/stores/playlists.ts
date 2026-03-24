@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { getDb } from '../services/database'
 import { dbRowToTrackRow, type TrackRow, type TrackDbRow } from '../types/track'
+import type { TrackFilters } from '../utils/filterTracks'
 
 export interface Playlist {
   id: number
@@ -9,6 +10,7 @@ export interface Playlist {
   description: string
   createdAt: string
   trackCount: number
+  filterState: TrackFilters | null
 }
 
 export const usePlaylistsStore = defineStore('playlists', () => {
@@ -17,9 +19,9 @@ export const usePlaylistsStore = defineStore('playlists', () => {
   async function loadPlaylists() {
     const db = await getDb()
     const rows = await db.select<{
-      id: number; name: string; description: string; created_at: string; track_count: number
+      id: number; name: string; description: string; created_at: string; track_count: number; filter_state: string | null
     }[]>(
-      `SELECT p.id, p.name, p.description, p.created_at,
+      `SELECT p.id, p.name, p.description, p.created_at, p.filter_state,
               COUNT(pt.track_id) AS track_count
        FROM playlists p
        LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
@@ -32,6 +34,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
       description: r.description,
       createdAt: r.created_at,
       trackCount: r.track_count,
+      filterState: r.filter_state ? JSON.parse(r.filter_state) as TrackFilters : null,
     }))
   }
 

@@ -49,6 +49,12 @@ pub fn run() {
             sql: include_str!("../migrations/003_track_blocklist.sql"),
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 4,
+            description: "playlist_filter_state",
+            sql: include_str!("../migrations/004_playlist_filter_state.sql"),
+            kind: MigrationKind::Up,
+        },
     ];
 
     tauri::Builder::default()

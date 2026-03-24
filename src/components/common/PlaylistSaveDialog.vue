@@ -4,7 +4,7 @@ import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import { usePlaylistsStore } from '../../stores/playlists'
 import { savePlaylist } from '../../services/database'
 
-const { visible, defaultName, trackIds, close } = usePlaylistSave()
+const { visible, defaultName, trackIds, filterState, close } = usePlaylistSave()
 const playlistsStore = usePlaylistsStore()
 
 const name = ref('')
@@ -18,7 +18,8 @@ async function onSave() {
   if (!name.value.trim() || saving.value) return
   saving.value = true
   try {
-    await savePlaylist(name.value.trim(), trackIds.value)
+    const fs = filterState.value ? JSON.stringify(filterState.value) : undefined
+    await savePlaylist(name.value.trim(), trackIds.value, fs)
     await playlistsStore.loadPlaylists()
     close()
   } finally {

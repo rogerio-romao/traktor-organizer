@@ -45,11 +45,11 @@ export async function runStartupMaintenance(): Promise<void> {
   )
 }
 
-export async function savePlaylist(name: string, trackIds: number[]): Promise<void> {
+export async function savePlaylist(name: string, trackIds: number[], filterState?: string): Promise<void> {
   const database = await getDb()
   const result = await database.execute(
-    "INSERT INTO playlists (name) VALUES ($1)",
-    [name],
+    'INSERT INTO playlists (name, filter_state) VALUES ($1, $2)',
+    [name, filterState ?? null],
   )
   const playlistId = result.lastInsertId ?? 0
   for (let i = 0; i < trackIds.length; i++) {
