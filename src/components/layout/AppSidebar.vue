@@ -2,9 +2,17 @@
 import { ref } from 'vue'
 import { useSidebar } from '../../composables/useSidebar'
 import TagCloud from '../tags/TagCloud.vue'
+import PlaylistPanel from '../playlists/PlaylistPanel.vue'
 
 const { isOpen } = useSidebar()
-const activeTab = ref<'tags' | 'playlists'>('tags')
+const activeTab = ref<'tags' | 'playlists'>(
+  (localStorage.getItem('traktor-sidebar-tab') as 'tags' | 'playlists') ?? 'tags'
+)
+
+function setActiveTab(tab: 'tags' | 'playlists') {
+  activeTab.value = tab
+  localStorage.setItem('traktor-sidebar-tab', tab)
+}
 
 const STORAGE_KEY = 'traktor-sidebar-width'
 const MIN_WIDTH = 200
@@ -45,20 +53,18 @@ function startResize(e: MouseEvent) {
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'tags' }"
-        @click="activeTab = 'tags'"
+        @click="setActiveTab('tags')"
       >Tags</button>
       <button
         class="tab-btn"
         :class="{ active: activeTab === 'playlists' }"
-        @click="activeTab = 'playlists'"
+        @click="setActiveTab('playlists')"
       >Playlists</button>
     </div>
 
     <div class="sidebar-content">
       <TagCloud v-if="activeTab === 'tags'" />
-      <div v-else class="placeholder">
-        Playlists coming in Phase 3.
-      </div>
+      <PlaylistPanel v-else />
     </div>
 
     <div class="resize-handle" @mousedown="startResize" />
@@ -128,11 +134,6 @@ function startResize(e: MouseEvent) {
   overflow-x: hidden;
 }
 
-.placeholder {
-  padding: 16px 12px;
-  font-size: 11px;
-  color: var(--text-secondary);
-}
 
 .resize-handle {
   position: absolute;

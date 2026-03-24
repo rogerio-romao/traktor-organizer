@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+const props = withDefaults(defineProps<{
+  tracks?: TrackRow[]
+  loading?: boolean
+  storageNamespace?: string
+}>(), {
+  storageNamespace: 'traktor',
+})
 import {
   useVueTable,
   createColumnHelper,
@@ -39,9 +46,9 @@ const columnSizingInfo = ref({
 })
 
 const LOCKED_COLS = new Set(['rowNumber', 'coverArt'])
-const STORAGE_ORDER      = 'traktor-column-order'
-const STORAGE_SIZES      = 'traktor-column-sizes'
-const STORAGE_VISIBILITY = 'traktor-column-visibility'
+const STORAGE_ORDER      = `${props.storageNamespace}-column-order`
+const STORAGE_SIZES      = `${props.storageNamespace}-column-sizes`
+const STORAGE_VISIBILITY = `${props.storageNamespace}-column-visibility`
 
 // ── Drag-to-reorder (mouse events — HTML5 DnD unreliable in WKWebView) ────────
 const draggingId = ref<string | null>(null)
@@ -141,7 +148,7 @@ const columns: ColumnDef<TrackRow, any>[] = [
 
 // ── Table ─────────────────────────────────────────────────────────────────────
 const table = useVueTable({
-  get data() { return tracksStore.filteredTracks },
+  get data() { return props.tracks ?? tracksStore.filteredTracks },
   columns,
   state: {
     get sorting()           { return sorting.value },
@@ -315,9 +322,9 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
       </div>
 
       <!-- Body -->
-      <div v-if="tracksStore.isLoading" class="empty-state">Loading…</div>
+      <div v-if="props.loading || tracksStore.isLoading" class="empty-state">Loading…</div>
       <div v-else-if="rows.length === 0" class="empty-state">
-        {{ tracksStore.allTracks.length === 0 ? 'No tracks imported yet.' : 'No tracks match the current filters.' }}
+        {{ props.tracks ? 'No tracks in this playlist.' : (tracksStore.allTracks.length === 0 ? 'No tracks imported yet.' : 'No tracks match the current filters.') }}
       </div>
       <div v-else :style="{ width: totalColumnsWidth + 'px', height: totalSize + 'px', position: 'relative' }">
         <div
@@ -382,8 +389,8 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
 
     <!-- Footer count -->
     <div class="table-footer">
-      {{ tracksStore.filteredTracks.length.toLocaleString() }} tracks
-      <template v-if="tracksStore.filteredTracks.length !== tracksStore.allTracks.length">
+      {{ rows.length.toLocaleString() }} tracks
+      <template v-if="!props.tracks && tracksStore.filteredTracks.length !== tracksStore.allTracks.length">
         of {{ tracksStore.allTracks.length.toLocaleString() }}
       </template>
     </div>

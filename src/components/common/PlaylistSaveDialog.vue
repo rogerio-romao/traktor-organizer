@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
+import { usePlaylistsStore } from '../../stores/playlists'
 import { savePlaylist } from '../../services/database'
 
 const { visible, defaultName, trackIds, close } = usePlaylistSave()
+const playlistsStore = usePlaylistsStore()
 
 const name = ref('')
 const saving = ref(false)
@@ -17,6 +19,7 @@ async function onSave() {
   saving.value = true
   try {
     await savePlaylist(name.value.trim(), trackIds.value)
+    await playlistsStore.loadPlaylists()
     close()
   } finally {
     saving.value = false
