@@ -20,6 +20,15 @@ async function removeTag(tag: string) {
   await tagsStore.loadAllTags()
 }
 
+function toggleFilter(tag: string) {
+  const idx = tracksStore.activeTagFilters.indexOf(tag)
+  if (idx >= 0) {
+    tracksStore.activeTagFilters.splice(idx, 1)
+  } else {
+    tracksStore.activeTagFilters.push(tag)
+  }
+}
+
 function onTagRightClick(tag: string, e: MouseEvent) {
   show(e.clientX, e.clientY, [
     {
@@ -49,11 +58,16 @@ function onTagRightClick(tag: string, e: MouseEvent) {
       v-for="tag in tags"
       :key="tag"
       class="tag-pill"
-      :style="{ background: getTagColor(tag).bg, borderColor: getTagColor(tag).border }"
+      :class="{ active: tracksStore.activeTagFilters.includes(tag) }"
+      :style="{
+        background: getTagColor(tag).bg,
+        borderColor: tracksStore.activeTagFilters.includes(tag) ? 'var(--accent)' : getTagColor(tag).border
+      }"
+      @click="toggleFilter(tag)"
       @contextmenu.prevent="onTagRightClick(tag, $event)"
     >
       {{ tag }}
-      <button class="pill-remove" @click.stop="removeTag(tag)">✕</button>
+      <button class="pill-remove" title="Remove tag from track" @click.stop="removeTag(tag)">−</button>
     </span>
     <button class="tag-edit-btn" title="Edit tags" @click.stop="openTagEditor(trackId)">+</button>
   </div>
@@ -84,6 +98,10 @@ function onTagRightClick(tag: string, e: MouseEvent) {
   white-space: nowrap;
   line-height: 16px;
   color: var(--text-primary, #e0e0e0);
+  cursor: pointer;
+}
+.tag-pill.active {
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .pill-remove {
   background: none;
