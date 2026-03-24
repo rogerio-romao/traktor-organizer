@@ -2,12 +2,14 @@
 import { ref } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
+import { useContextMenu } from '../../composables/useContextMenu'
 import ImportDialog from '../common/ImportDialog.vue'
 import type { ImportStats } from '../../composables/useImport'
 
 const tracksStore = useTracksStore()
 const importDialog = ref<InstanceType<typeof ImportDialog> | null>(null)
 const { open: openPlaylistSave } = usePlaylistSave()
+const { show: showContextMenu } = useContextMenu()
 
 async function onImported(_stats: ImportStats) {
   await tracksStore.loadAllTracks()
@@ -17,11 +19,20 @@ function onSaveSearchAsPlaylist() {
   const ids = tracksStore.filteredTracks.map(t => t.id)
   openPlaylistSave(tracksStore.globalSearch.trim(), ids)
 }
+
+function onHeaderContextMenu(e: MouseEvent) {
+  if (!import.meta.env.DEV) return
+  e.preventDefault()
+  showContextMenu(e.clientX, e.clientY, [
+    { label: 'Reload', action: () => location.reload() },
+    { label: 'Inspect Element', action: () => import('@tauri-apps/api/core').then(({ invoke }) => invoke('open_devtools')) },
+  ])
+}
 </script>
 
 <template>
   <header class="app-header">
-    <div class="header-left">
+    <div class="header-left" @contextmenu="onHeaderContextMenu">
       <span class="app-name">Traktor Organizer</span>
     </div>
 

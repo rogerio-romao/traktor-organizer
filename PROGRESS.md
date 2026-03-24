@@ -1,6 +1,6 @@
 # Traktor Organizer — Build Progress
 
-Last updated: 2026-03-23
+Last updated: 2026-03-24
 
 ---
 
@@ -38,66 +38,43 @@ All scaffolding, database, parsing, import, and table rendering is working.
 
 ---
 
-## BEFORE Phase 2 — Bugs to fix first (code is written, not yet verified)
+## Phase 1.5: Polish + Foundation — COMPLETE
 
-These three fixes were coded at end of last session but confirmed NOT working in the running app.
-**Most likely cause**: app was opened from the built binary (Finder/Dock) rather than `pnpm tauri dev`,
-so it ran the old compiled version. Start session by running `pnpm tauri dev` and re-testing.
+### What's done
 
-### 1. Key display — still showing Open Key (e.g. "11d") instead of standard notation
-- Code change is in `src/components/tracks/TrackTable.vue` — musicalKey cell now calls `formatKey(val, 'standard')`
-- `formatKey` and `OPEN_KEY_TO_STANDARD` map already exist in `src/utils/constants.ts`
-- If still broken after dev server check: verify the import of `formatKey` is present at top of TrackTable.vue
+**Pre-Phase-2 bugs fixed:**
+- Key display: now shows standard notation (e.g. "4A") via `formatKey(val, 'standard')` in TrackTable.vue
+- Duration: now shows `m:ss` / `h:mm:ss` via updated `formatDuration` in constants.ts
+- Beatport junk tags: `TAG_BLOCKLIST` in tag-processor.ts filters on import; `runStartupMaintenance()` cleans stale junk tags from DB on app start using the `tag_blocklist` table
 
-### 2. Duration — still showing raw seconds (e.g. "391") instead of m:ss
-- Code change is in `src/utils/constants.ts` — `formatDuration` now handles hours: `h:mm:ss` or `m:ss`
-- TrackTable.vue already calls `formatDuration(info.getValue())` for the Time column
-- If still broken: check the function was saved correctly in constants.ts
+**1. Column reordering and resizing**
+- Mouse-event-based column drag (HTML5 DnD unreliable in Tauri WKWebView)
+- Resize handle is a separate sibling element to avoid drag interference
+- Drop indicator shows left/right directional arrow based on drag direction
+- `LOCKED_COLS = ['rowNumber', 'coverArt']` — not draggable or resizable
+- Column order + sizes persisted in `localStorage` (`traktor-column-order`, `traktor-column-sizes`)
 
-### 3. Beatport junk tags — "purchased", "at", "beatportcom" still appearing
-- Code change is in `src/services/tag-processor.ts` — `TAG_BLOCKLIST` set filters them on split
-- **Important**: the fix only applies to NEW imports. The merge strategy preserves existing tags,
-  so re-importing won't remove tags already in the DB for existing tracks.
-- Fix: after verifying the blocklist works on a fresh import, run a cleanup to remove stale junk tags.
-  One-shot SQL to run via the DB service or a temporary button:
-  ```sql
-  DELETE FROM track_tags WHERE tag_id IN (SELECT id FROM tags WHERE name IN ('purchased','at','beatportcom','-'));
-  DELETE FROM tags WHERE name IN ('purchased','at','beatportcom','-');
-  ```
+**2. Right-click context menu + playlist creation**
+- Global browser context menu suppressed in `App.vue`
+- `ContextMenu.vue` + `useContextMenu.ts` — module-level singleton, Teleport to body
+- Dev-only Reload + Inspect Element: right-click on the "Traktor Organizer" header-left zone only
+- `open_devtools` Tauri command gated behind `#[cfg(debug_assertions)]`
+- Tag right-click: "Export as Playlist" + "Add to Tag Blocklist" (via `TagCell.vue`)
+- `PlaylistSaveDialog.vue` + `usePlaylistSave.ts` — shared dialog for all save-playlist flows
+- ⊕ button in search bar saves current search results as a playlist
+- Playlists saved to `playlists` + `playlist_tracks` DB tables
 
----
+**3. Tag visual style**
+- ALL CAPS via CSS `text-transform: uppercase`
+- Badge-style: `border-radius: 4px`, `font-weight: 600`, `letter-spacing: 0.07em`
+- Per-tag color system updated: `border` field added (border color), text uses `var(--text-primary)`
+- Single-row overflow: `flex-wrap: nowrap`, `overflow: hidden`, `gap: 8px`
 
-## Phase 1.5: Polish + Foundation — NOT STARTED
-
-### 1. Column reordering and resizing
-- Drag and drop columns left/right in the table header
-- Drag column edges to resize width
-- All columns resizable except `#` (row number) and cover art; all draggable except those two as well
-- Drag and drop columns left/right in the table header
-- Persist column order and widths in `localStorage`
-
-### 2. Right-click context menu + playlist creation
-- Global: suppress default browser context menu, build a Vue context menu component
-- In development builds only: context menu includes a divider + "Reload" and "Inspect Element" at the bottom
-- **Tag right-click menu:**
-  - "Export as playlist" — filters by that tag, opens export dialog with tag name as default playlist name (editable)
-  - "Add to tag blocklist" — adds the tag to the `tag_blocklist` table and removes it from all tracks immediately
-- **Playlist from current filter/search:**
-  - Small icon button next to the search field, only active when a search is active
-  - Clicking it opens the export playlist dialog with the search term as the default name (editable)
-- Export dialog is shared between both flows (phase 3 NML export will plug into the same dialog)
-
-### 3. Tag visual style
-- Display tag text in ALL CAPS in the UI (no DB change, CSS only)
-- Restyle tag pills: darker inset background, slightly glowing/contrasting text, more badge-like (reference: rounded rectangle, not flat chip)
-- Keep per-tag color system, just update the shape and text transform
-
-### 4. Track blocklist
-- Add `track_blocklist` table (block tracks by artist name) — migration `003_track_blocklist.sql`
-- Seed with `Native Instruments` as the first entry
-- Tracks matching a blocklisted artist are still imported (for NML round-trip integrity) but hidden in the UI
-- Filter blocked tracks out in the Pinia store (`filteredTracks`) so they never appear in the table
-- In `useImport.ts` and `database.ts`, rename the local variable `blocklist` → `tagBlocklist` to distinguish from the new `trackBlocklist`
+**4. Track blocklist**
+- Migration `003_track_blocklist.sql` — `track_blocklist(artist_name)`, seeded with `Native Instruments`
+- Tracks with blocked artists imported (NML round-trip) but hidden in `filteredTracks` via SQL subquery
+- `tagBlocklist` rename throughout `useImport.ts` / `database.ts` to distinguish from track blocklist
+- Tag blocklist stored in DB (`tag_blocklist` table) — not hardcoded — for future user management
 
 ---
 

@@ -1,23 +1,10 @@
 <script setup lang="ts">
 import { watch, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { useContextMenu, type ContextMenuItem } from '../../composables/useContextMenu'
+import { useContextMenu } from '../../composables/useContextMenu'
 
 const { visible, position, items, hide } = useContextMenu()
 
-const devItems: ContextMenuItem[] = import.meta.env.DEV ? [
-  {
-    label: 'Reload',
-    action: () => location.reload(),
-    divider: true,
-  },
-  {
-    label: 'Inspect Element',
-    action: () => invoke('open_devtools'),
-  },
-] : []
-
-const allItems = () => [...items.value, ...devItems]
+const allItems = () => items.value
 
 function runAction(action: () => void) {
   hide()
