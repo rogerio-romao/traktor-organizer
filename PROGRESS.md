@@ -104,21 +104,24 @@ so it ran the old compiled version. Start session by running `pnpm tauri dev` an
 ## Phase 2: Editing + Filtering — NOT STARTED
 
 1. Tag editing: `TagEditor.vue` (popover/modal with add/remove), autocomplete from existing tags
-2. Tag cloud sidebar: `AppSidebar.vue`, `TagCloud.vue` with counts, AND filtering
-3. Per-column filters: Genre dropdown, BPM range, Key picker, Rating minimum
-4. Genre inline editing (`GenreCell.vue`)
-5. Rating click-to-edit (`RatingCell.vue`)
-6. Re-import with merge stats summary (UI for showing what changed)
+2. Tag cloud sidebar: `AppSidebar.vue`, `TagCloud.vue` with counts, AND filtering; active filters shown as dismissible pills
+3. Tag pill right-click in table: add "Filter by tag" / "Remove from filter" (dynamic label) to the context menu — wires into the same `activeTagFilters` as the sidebar
+4. Per-column filters: Genre dropdown, Key picker, Rating minimum
+5. Genre inline editing (`GenreCell.vue`)
+6. Rating click-to-edit (`RatingCell.vue`)
+7. Re-import with merge stats summary (UI for showing what changed)
 
 ---
 
 ## Phase 3: Playlists + Export — NOT STARTED
 
-1. `PlaylistCreate.vue` — auto-name from active filters, editable
-2. `PlaylistPanel.vue` — list playlists, view tracks, delete
-3. `nml-exporter.ts` — XMLBuilder, full ENTRY + PLAYLISTS structure
-4. `PlaylistExport.vue` — save dialog via Tauri, export .nml
-5. Export validation
+Note: saving playlists to the DB is already implemented (done in Phase 1.5 item 2).
+The `playlists` and `playlist_tracks` tables are populated. Phase 3 builds the UI on top.
+
+1. `PlaylistPanel.vue` — list saved playlists, view tracks in each, delete
+2. `nml-exporter.ts` — XMLBuilder, full ENTRY + PLAYLISTS structure
+3. `PlaylistExport.vue` — file save dialog via Tauri, export .nml
+4. Export validation
 
 ---
 

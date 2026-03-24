@@ -11,8 +11,6 @@ export const useTracksStore = defineStore('tracks', () => {
   const globalSearch = ref('')
   const activeTagFilters = ref<string[]>([])   // AND logic — track must have ALL of these
   const genreFilter = ref<string | null>(null)
-  const bpmMin = ref<number | null>(null)
-  const bpmMax = ref<number | null>(null)
   const keyFilter = ref<string | null>(null)
   const ratingFilter = ref<number | null>(null) // minimum stars
 
@@ -29,13 +27,6 @@ export const useTracksStore = defineStore('tracks', () => {
     if (genreFilter.value) {
       const g = genreFilter.value.toLowerCase()
       result = result.filter(t => t.genre.toLowerCase() === g)
-    }
-
-    if (bpmMin.value != null) {
-      result = result.filter(t => t.bpm != null && t.bpm >= bpmMin.value!)
-    }
-    if (bpmMax.value != null) {
-      result = result.filter(t => t.bpm != null && t.bpm <= bpmMax.value!)
     }
 
     if (keyFilter.value) {
@@ -158,8 +149,6 @@ export const useTracksStore = defineStore('tracks', () => {
     globalSearch.value = ''
     activeTagFilters.value = []
     genreFilter.value = null
-    bpmMin.value = null
-    bpmMax.value = null
     keyFilter.value = null
     ratingFilter.value = null
   }
@@ -171,8 +160,6 @@ export const useTracksStore = defineStore('tracks', () => {
     globalSearch,
     activeTagFilters,
     genreFilter,
-    bpmMin,
-    bpmMax,
     keyFilter,
     ratingFilter,
     loadAllTracks,

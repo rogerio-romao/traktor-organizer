@@ -22,6 +22,12 @@ fn extract_cover_art(path: String) -> String {
         .unwrap_or_default()
 }
 
+#[tauri::command]
+fn open_devtools(window: tauri::WebviewWindow) {
+    #[cfg(debug_assertions)]
+    window.open_devtools();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let migrations = vec![
@@ -54,7 +60,7 @@ pub fn run() {
                 .add_migrations("sqlite:traktor-organizer.db", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![extract_cover_art])
+        .invoke_handler(tauri::generate_handler![extract_cover_art, open_devtools])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
+import { usePlaylistSave } from '../../composables/usePlaylistSave'
 import ImportDialog from '../common/ImportDialog.vue'
 import type { ImportStats } from '../../composables/useImport'
 
 const tracksStore = useTracksStore()
 const importDialog = ref<InstanceType<typeof ImportDialog> | null>(null)
+const { open: openPlaylistSave } = usePlaylistSave()
 
 async function onImported(_stats: ImportStats) {
   await tracksStore.loadAllTracks()
+}
+
+function onSaveSearchAsPlaylist() {
+  const ids = tracksStore.filteredTracks.map(t => t.id)
+  openPlaylistSave(tracksStore.globalSearch.trim(), ids)
 }
 </script>
 
@@ -27,6 +34,12 @@ async function onImported(_stats: ImportStats) {
           type="text"
           placeholder="Search tracks…"
         />
+        <button
+          v-if="tracksStore.globalSearch"
+          class="btn-save-playlist"
+          title="Save as playlist"
+          @click="onSaveSearchAsPlaylist"
+        >⊕</button>
         <button
           v-if="tracksStore.globalSearch"
           class="search-clear"
@@ -91,7 +104,7 @@ async function onImported(_stats: ImportStats) {
 .search-input {
   width: 100%;
   height: 30px;
-  padding: 0 30px 0 30px;
+  padding: 0 52px 0 30px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   border-radius: 5px;
@@ -101,6 +114,18 @@ async function onImported(_stats: ImportStats) {
 }
 .search-input::placeholder { color: var(--text-secondary); }
 .search-input:focus { border-color: var(--accent); }
+
+.btn-save-playlist {
+  position: absolute;
+  right: 26px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  padding: 2px;
+  line-height: 1;
+}
+.btn-save-playlist:hover { color: var(--accent-dim); }
 
 .search-clear {
   position: absolute;

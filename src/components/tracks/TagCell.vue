@@ -1,7 +1,39 @@
 <script setup lang="ts">
 import { getTagColor } from '../../utils/tag-colors'
+import { useContextMenu } from '../../composables/useContextMenu'
+import { usePlaylistSave } from '../../composables/usePlaylistSave'
+import { addToTagBlocklist } from '../../services/database'
+import { useTracksStore } from '../../stores/tracks'
+import { useTagsStore } from '../../stores/tags'
 
 defineProps<{ tags: string[] }>()
+
+const { show } = useContextMenu()
+const { open: openPlaylistSave } = usePlaylistSave()
+const tracksStore = useTracksStore()
+const tagsStore = useTagsStore()
+
+function onTagRightClick(tag: string, e: MouseEvent) {
+  show(e.clientX, e.clientY, [
+    {
+      label: 'Export as Playlist',
+      action: () => {
+        const ids = tracksStore.allTracks
+          .filter(t => t.tags.includes(tag))
+          .map(t => t.id)
+        openPlaylistSave(tag, ids)
+      },
+    },
+    {
+      label: 'Add to Tag Blocklist',
+      action: async () => {
+        await addToTagBlocklist(tag)
+        await tracksStore.loadAllTracks()
+        await tagsStore.loadAllTags()
+      },
+    },
+  ])
+}
 </script>
 
 <template>
@@ -11,6 +43,7 @@ defineProps<{ tags: string[] }>()
       :key="tag"
       class="tag-pill"
       :style="{ background: getTagColor(tag).bg, borderColor: getTagColor(tag).border }"
+      @contextmenu.prevent="onTagRightClick(tag, $event)"
     >{{ tag }}</span>
   </div>
 </template>

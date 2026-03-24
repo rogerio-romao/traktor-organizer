@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import AppHeader from './components/layout/AppHeader.vue'
+import ContextMenu from './components/common/ContextMenu.vue'
+import PlaylistSaveDialog from './components/common/PlaylistSaveDialog.vue'
 import { runStartupMaintenance } from './services/database'
 
 onMounted(async () => {
   await runStartupMaintenance()
+  document.addEventListener('contextmenu', e => e.preventDefault())
 })
 </script>
 
@@ -15,6 +18,8 @@ onMounted(async () => {
       <RouterView />
     </div>
   </div>
+  <ContextMenu />
+  <PlaylistSaveDialog />
 </template>
 
 <style scoped>

@@ -41,6 +41,31 @@ export async function runStartupMaintenance(): Promise<void> {
   )
 }
 
+export async function savePlaylist(name: string, trackIds: number[]): Promise<void> {
+  const database = await getDb()
+  const result = await database.execute(
+    "INSERT INTO playlists (name) VALUES ($1)",
+    [name],
+  )
+  const playlistId = result.lastInsertId ?? 0
+  for (let i = 0; i < trackIds.length; i++) {
+    await database.execute(
+      'INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES ($1, $2, $3)',
+      [playlistId, trackIds[i], i + 1],
+    )
+  }
+}
+
+export async function addToTagBlocklist(tagName: string): Promise<void> {
+  const database = await getDb()
+  await database.execute('INSERT OR IGNORE INTO tag_blocklist (name) VALUES ($1)', [tagName])
+  await database.execute(
+    'DELETE FROM track_tags WHERE tag_id = (SELECT id FROM tags WHERE name = $1)',
+    [tagName],
+  )
+  await database.execute('DELETE FROM tags WHERE name = $1', [tagName])
+}
+
 export async function getSetting(key: string): Promise<string | null> {
   const database = await getDb()
   const rows = await database.select<{ value: string }[]>(
