@@ -1,27 +1,28 @@
 <script setup lang="ts">
 import { usePlaylistView } from '../../composables/usePlaylistView'
-import type { Playlist } from '../../stores/playlists'
+import { useTracksStore } from '../../stores/tracks'
 
-defineProps<{ playlist: Playlist; trackCount: number }>()
+const { activePlaylist, playlistTracks, closePlaylist } = usePlaylistView()
+const tracksStore = useTracksStore()
 
-const { closePlaylist } = usePlaylistView()
+function goBack() {
+  tracksStore.clearFilters()
+  closePlaylist()
+}
 </script>
 
 <template>
-  <div class="playlist-header">
-    <button class="btn-back" @click="closePlaylist">← Collection</button>
+  <div class="view-header">
+    <button class="btn-back" @click="goBack">← Collection</button>
     <div class="header-info">
-      <span class="playlist-name">{{ playlist.name }}</span>
-      <span class="playlist-meta">{{ trackCount }} track{{ trackCount === 1 ? '' : 's' }}</span>
-    </div>
-    <div class="header-actions">
-      <!-- Export button — Phase 3 item 2 -->
+      <span class="playlist-name">{{ activePlaylist!.name }}</span>
+      <span class="playlist-meta">{{ playlistTracks.length }} track{{ playlistTracks.length === 1 ? '' : 's' }}</span>
     </div>
   </div>
 </template>
 
 <style scoped>
-.playlist-header {
+.view-header {
   display: flex;
   align-items: center;
   gap: 12px;

@@ -2,11 +2,18 @@
 import { onMounted } from 'vue'
 import { usePlaylistsStore, type Playlist } from '../../stores/playlists'
 import { usePlaylistView } from '../../composables/usePlaylistView'
+import { useTracksStore } from '../../stores/tracks'
 import { useConfirm } from '../../composables/useConfirm'
 
 const playlistsStore = usePlaylistsStore()
 const { activePlaylist, openPlaylist } = usePlaylistView()
+const tracksStore = useTracksStore()
 const { confirm } = useConfirm()
+
+function handleOpenPlaylist(playlist: Playlist) {
+  tracksStore.clearFilters()
+  openPlaylist(playlist)
+}
 
 onMounted(() => playlistsStore.loadPlaylists())
 
@@ -29,7 +36,7 @@ async function deletePlaylist(playlist: Playlist) {
         :key="playlist.id"
         class="playlist-item"
         :class="{ active: activePlaylist?.id === playlist.id }"
-        @click="openPlaylist(playlist)"
+        @click="handleOpenPlaylist(playlist)"
       >
         <span class="playlist-name">{{ playlist.name }}</span>
         <span class="playlist-count">{{ playlist.trackCount }}</span>

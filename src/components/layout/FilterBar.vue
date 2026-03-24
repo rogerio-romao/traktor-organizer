@@ -1,11 +1,42 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
+import { usePlaylistView } from '../../composables/usePlaylistView'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
-import { formatKey, OPEN_KEY_TO_STANDARD } from '../../utils/constants'
+import { filterTracks } from '../../utils/filterTracks'
+import { formatKey } from '../../utils/constants'
 
 const tracksStore = useTracksStore()
 const { open: openPlaylistSave } = usePlaylistSave()
+const { activePlaylist, playlistTracks, hasRemovals, updatePlaylist } = usePlaylistView()
+
+// Genre/key source: playlist tracks when viewing a playlist, full collection otherwise
+const sourceTracks = computed(() => activePlaylist.value ? playlistTracks.value : tracksStore.allTracks)
+
+// Tracks currently visible after filtering — used for save/update actions
+const displayTracks = computed(() =>
+  activePlaylist.value
+    ? filterTracks(playlistTracks.value, {
+        globalSearch: tracksStore.globalSearch,
+        activeTagFilters: tracksStore.activeTagFilters,
+        genreFilter: tracksStore.genreFilter,
+        keyFilter: tracksStore.keyFilter,
+        ratingFilter: tracksStore.ratingFilter,
+      })
+    : tracksStore.filteredTracks
+)
+
+const hasAnyFilter = computed(() =>
+  tracksStore.activeTagFilters.length > 0 ||
+  tracksStore.genreFilter !== null ||
+  tracksStore.keyFilter !== null ||
+  tracksStore.ratingFilter !== null,
+)
+
+// "Update playlist" is active when tracks were removed or a filter is narrowing the view
+const isModified = computed(() =>
+  !!activePlaylist.value && (hasRemovals.value || hasAnyFilter.value || !!tracksStore.globalSearch.trim())
+)
 
 function getDefaultPlaylistName(): string {
   const activeCount = [
@@ -28,29 +59,27 @@ function getDefaultPlaylistName(): string {
 }
 
 function saveAsPlaylist() {
-  const ids = tracksStore.filteredTracks.map(t => t.id)
+  const ids = displayTracks.value.map(t => t.id)
   openPlaylistSave(getDefaultPlaylistName(), ids)
 }
 
+async function handleUpdatePlaylist() {
+  await updatePlaylist(displayTracks.value.map(t => t.id))
+  tracksStore.clearFilters()
+}
+
 const genres = computed(() => {
-  const unique = new Set(tracksStore.allTracks.map(t => t.genre).filter(Boolean))
+  const unique = new Set(sourceTracks.value.map(t => t.genre).filter(Boolean))
   return [...unique].sort()
 })
 
-// All Open Key values present in the collection, sorted numerically (1–12, d before m)
+// All key values present in the source, sorted alphabetically by standard notation
 const keys = computed(() => {
-  const unique = new Set(tracksStore.allTracks.map(t => t.musicalKey).filter(Boolean))
+  const unique = new Set(sourceTracks.value.map(t => t.musicalKey).filter(Boolean))
   return [...unique].sort((a, b) =>
     (formatKey(a, 'standard') || a).localeCompare(formatKey(b, 'standard') || b)
   )
 })
-
-const hasAnyFilter = computed(() =>
-  tracksStore.activeTagFilters.length > 0 ||
-  tracksStore.genreFilter !== null ||
-  tracksStore.keyFilter !== null ||
-  tracksStore.ratingFilter !== null,
-)
 </script>
 
 <template>
@@ -107,7 +136,22 @@ const hasAnyFilter = computed(() =>
       Clear all
     </button>
 
-    <button class="btn-save-playlist" title="Save current results as a playlist" @click="saveAsPlaylist">
+    <!-- In playlist mode: Update playlist button; otherwise: Save as playlist -->
+    <button
+      v-if="activePlaylist"
+      class="btn-update-playlist"
+      :disabled="!isModified"
+      title="Save changes back to this playlist"
+      @click="handleUpdatePlaylist"
+    >
+      ↑ Update playlist
+    </button>
+    <button
+      v-else
+      class="btn-save-playlist"
+      title="Save current results as a playlist"
+      @click="saveAsPlaylist"
+    >
       ⊕ Save as playlist
     </button>
   </div>
@@ -205,7 +249,8 @@ const hasAnyFilter = computed(() =>
 }
 .filters-clear:hover { color: var(--text-primary); }
 
-.btn-save-playlist {
+.btn-save-playlist,
+.btn-update-playlist {
   margin-left: auto;
   flex-shrink: 0;
   background: none;
@@ -219,8 +264,13 @@ const hasAnyFilter = computed(() =>
   cursor: pointer;
   white-space: nowrap;
 }
-.btn-save-playlist:hover {
+.btn-save-playlist:hover,
+.btn-update-playlist:hover:not(:disabled) {
   border-color: var(--accent);
   color: var(--accent);
+}
+.btn-update-playlist:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 </style>

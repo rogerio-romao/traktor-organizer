@@ -21,8 +21,10 @@ import {
 } from '@tanstack/vue-table'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useTracksStore } from '../../stores/tracks'
+import { usePlaylistView } from '../../composables/usePlaylistView'
 import { formatDuration, formatKey } from '../../utils/constants'
 import { useContextMenu, type ContextMenuItem } from '../../composables/useContextMenu'
+import { useConfirm } from '../../composables/useConfirm'
 import type { TrackRow } from '../../types/track'
 import CoverArtCell from './CoverArtCell.vue'
 import EditableTextCell from './EditableTextCell.vue'
@@ -30,12 +32,22 @@ import RatingCell from './RatingCell.vue'
 import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
+const { activePlaylist, removeTrack } = usePlaylistView()
 const { show: showContextMenu } = useContextMenu()
+const { confirm } = useConfirm()
+
+async function handleRemoveTrack(trackId: number) {
+  const ok = await confirm('Remove this track from the playlist?')
+  if (ok) removeTrack(trackId)
+}
 const scrollContainer = ref<HTMLElement | null>(null)
 const sorting = ref<SortingState>([])
 const columnOrder      = ref<string[]>([])
 const columnSizing     = ref<ColumnSizingState>({})
-const columnVisibility = ref<VisibilityState>({})
+// Hide the remove column in collection mode; only shown when viewing a playlist
+const columnVisibility = ref<VisibilityState>(
+  activePlaylist.value ? {} : { removeFromPlaylist: false }
+)
 const columnSizingInfo = ref({
   columnSizingStart: [] as [string, number][],
   deltaOffset: null as number | null,
@@ -45,7 +57,7 @@ const columnSizingInfo = ref({
   startSize: null as number | null,
 })
 
-const LOCKED_COLS = new Set(['rowNumber', 'coverArt'])
+const LOCKED_COLS = new Set(['rowNumber', 'coverArt', 'removeFromPlaylist'])
 const STORAGE_ORDER      = `${props.storageNamespace}-column-order`
 const STORAGE_SIZES      = `${props.storageNamespace}-column-sizes`
 const STORAGE_VISIBILITY = `${props.storageNamespace}-column-visibility`
@@ -131,6 +143,13 @@ const columns: ColumnDef<TrackRow, any>[] = [
     enableSorting: false,
     enableResizing: false,
   }),
+  columnHelper.display({
+    id: 'removeFromPlaylist',
+    header: '',
+    size: 44, minSize: 44, maxSize: 44,
+    enableSorting: false,
+    enableResizing: false,
+  }),
   columnHelper.accessor('title',      { header: 'Title',    size: 200, minSize: 80 }),
   columnHelper.accessor('artist',     { header: 'Artist',   size: 160, minSize: 80 }),
   columnHelper.accessor('album',      { header: 'Album',    size: 160, minSize: 60, cell: info => info.getValue() || '—' }),
@@ -170,7 +189,9 @@ const table = useVueTable({
   },
   onColumnVisibilityChange: u => {
     columnVisibility.value = typeof u === 'function' ? u(columnVisibility.value) : u
-    localStorage.setItem(STORAGE_VISIBILITY, JSON.stringify(columnVisibility.value))
+    // Don't persist removeFromPlaylist — its visibility is controlled by the mode, not the user
+    const { removeFromPlaylist: _, ...toSave } = columnVisibility.value
+    localStorage.setItem(STORAGE_VISIBILITY, JSON.stringify(toSave))
   },
   onColumnSizingInfoChange: u => {
     columnSizingInfo.value = typeof u === 'function' ? u(columnSizingInfo.value) : u
@@ -190,7 +211,17 @@ onMounted(() => {
       const parsed: string[] = JSON.parse(savedOrder)
       const valid   = parsed.filter(id => allIds.includes(id))
       const missing = allIds.filter(id => !valid.includes(id))
-      columnOrder.value = [...valid, ...missing]
+      // Insert removeFromPlaylist after coverArt rather than appending to end
+      const order = [...valid]
+      for (const id of missing) {
+        if (id === 'removeFromPlaylist') {
+          const after = order.indexOf('coverArt')
+          order.splice(after !== -1 ? after + 1 : order.length, 0, id)
+        } else {
+          order.push(id)
+        }
+      }
+      columnOrder.value = order
     } else {
       columnOrder.value = allIds
     }
@@ -211,7 +242,7 @@ onMounted(() => {
 
 // ── Column visibility context menu ────────────────────────────────────────────
 // Returns the column's header string, falling back to its id if the header is a render function
-function colLabel(col: { columnDef: { header: unknown }, id: string }): string {
+function colLabel(col: { columnDef: { header?: unknown }, id: string }): string {
   return typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
 }
 
@@ -233,7 +264,11 @@ function showColumnAfter(showColId: string, afterColId: string) {
 function onHeaderContextMenu(e: MouseEvent, header: Header<TrackRow, unknown>) {
   e.preventDefault()
   const col = header.column
-  const hidden = table.getAllLeafColumns().filter(c => !c.getIsVisible())
+  // No context menu for locked/mode-controlled columns
+  if (LOCKED_COLS.has(col.id)) return
+
+  // Hidden user-toggleable columns (exclude mode-controlled ones)
+  const hidden = table.getAllLeafColumns().filter(c => !c.getIsVisible() && !LOCKED_COLS.has(c.id))
 
   const menuItems: ContextMenuItem[] = [
     { label: `Hide "${colLabel(col)}"`, action: () => col.toggleVisibility(false) },
@@ -249,6 +284,11 @@ function onHeaderContextMenu(e: MouseEvent, header: Header<TrackRow, unknown>) {
 
   showContextMenu(e.clientX, e.clientY, menuItems)
 }
+
+// Use props.loading when tracks are externally provided; otherwise use tracksStore.isLoading
+const isLoading = computed(() =>
+  props.tracks !== undefined ? (props.loading ?? false) : tracksStore.isLoading
+)
 
 // ── Virtualizer ───────────────────────────────────────────────────────────────
 const rows       = computed(() => table.getRowModel().rows)
@@ -322,9 +362,12 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
       </div>
 
       <!-- Body -->
-      <div v-if="props.loading || tracksStore.isLoading" class="empty-state">Loading…</div>
+      <div v-if="isLoading" class="empty-state">Loading…</div>
       <div v-else-if="rows.length === 0" class="empty-state">
-        {{ props.tracks ? 'No tracks in this playlist.' : (tracksStore.allTracks.length === 0 ? 'No tracks imported yet.' : 'No tracks match the current filters.') }}
+        {{ props.tracks !== undefined
+          ? (props.tracks.length === 0 ? 'No tracks in this playlist.' : 'No tracks match the current filters.')
+          : (tracksStore.allTracks.length === 0 ? 'No tracks imported yet.' : 'No tracks match the current filters.')
+        }}
       </div>
       <div v-else :style="{ width: totalColumnsWidth + 'px', height: totalSize + 'px', position: 'relative' }">
         <div
@@ -377,6 +420,12 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
                 :tags="rows[vRow.index].original.tags"
                 :track-id="rows[vRow.index].original.id"
               />
+              <button
+                v-else-if="cell.column.id === 'removeFromPlaylist'"
+                class="btn-remove-track"
+                title="Remove from playlist"
+                @click.stop="handleRemoveTrack(rows[vRow.index].original.id)"
+              >✕</button>
               <span v-else class="cell-text">
                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </span>
@@ -390,7 +439,10 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
     <!-- Footer count -->
     <div class="table-footer">
       {{ rows.length.toLocaleString() }} tracks
-      <template v-if="!props.tracks && tracksStore.filteredTracks.length !== tracksStore.allTracks.length">
+      <template v-if="props.tracks && props.tracks.length !== rows.length">
+        of {{ props.tracks.length.toLocaleString() }}
+      </template>
+      <template v-else-if="!props.tracks && tracksStore.filteredTracks.length !== tracksStore.allTracks.length">
         of {{ tracksStore.allTracks.length.toLocaleString() }}
       </template>
     </div>
@@ -530,6 +582,25 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
   width: 100%;
   text-align: right;
 }
+
+/* ── Remove track button ────────────────── */
+.btn-remove-track {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.table-row:hover .btn-remove-track { opacity: 0.5; }
+.table-row:hover .btn-remove-track:hover { opacity: 1; color: #c0392b; }
 
 /* ── Footer ─────────────────────────────── */
 .table-footer {
