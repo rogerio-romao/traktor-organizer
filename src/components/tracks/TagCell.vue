@@ -2,14 +2,16 @@
 import { getTagColor } from '../../utils/tag-colors'
 import { useContextMenu } from '../../composables/useContextMenu'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
+import { useTagEditor } from '../../composables/useTagEditor'
 import { addToTagBlocklist } from '../../services/database'
 import { useTracksStore } from '../../stores/tracks'
 import { useTagsStore } from '../../stores/tags'
 
-defineProps<{ tags: string[] }>()
+const props = defineProps<{ tags: string[], trackId: number }>()
 
 const { show } = useContextMenu()
 const { open: openPlaylistSave } = usePlaylistSave()
+const { open: openTagEditor } = useTagEditor()
 const tracksStore = useTracksStore()
 const tagsStore = useTagsStore()
 
@@ -45,6 +47,7 @@ function onTagRightClick(tag: string, e: MouseEvent) {
       :style="{ background: getTagColor(tag).bg, borderColor: getTagColor(tag).border }"
       @contextmenu.prevent="onTagRightClick(tag, $event)"
     >{{ tag }}</span>
+    <button class="tag-edit-btn" title="Edit tags" @click.stop="openTagEditor(trackId)">+</button>
   </div>
 </template>
 
@@ -56,6 +59,8 @@ function onTagRightClick(tag: string, e: MouseEvent) {
   align-items: center;
   padding: 2px 0;
   overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 .tag-pill {
   display: inline-block;
@@ -69,5 +74,25 @@ function onTagRightClick(tag: string, e: MouseEvent) {
   white-space: nowrap;
   line-height: 16px;
   color: var(--text-primary, #e0e0e0);
+}
+.tag-edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1;
+  padding: 1px 5px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.tag-cell:hover .tag-edit-btn {
+  opacity: 1;
+}
+.tag-edit-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
 }
 </style>

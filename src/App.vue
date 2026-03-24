@@ -3,6 +3,7 @@ import { onMounted } from 'vue'
 import AppHeader from './components/layout/AppHeader.vue'
 import ContextMenu from './components/common/ContextMenu.vue'
 import PlaylistSaveDialog from './components/common/PlaylistSaveDialog.vue'
+import TagEditor from './components/tracks/TagEditor.vue'
 import { runStartupMaintenance } from './services/database'
 
 onMounted(async () => {
@@ -20,6 +21,7 @@ onMounted(async () => {
   </div>
   <ContextMenu />
   <PlaylistSaveDialog />
+  <TagEditor />
 </template>
 
 <style scoped>

@@ -299,6 +299,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
               <TagCell
                 v-else-if="cell.column.id === 'tags'"
                 :tags="rows[vRow.index].original.tags"
+                :track-id="rows[vRow.index].original.id"
               />
               <span v-else class="cell-text">
                 <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
