@@ -4,6 +4,7 @@ import { useTagEditor } from '../../composables/useTagEditor'
 import { useTracksStore } from '../../stores/tracks'
 import { useTagsStore } from '../../stores/tags'
 import { getTagColor } from '../../utils/tag-colors'
+import { normalizeTag } from '../../services/tag-processor'
 
 const { visible, trackId, close } = useTagEditor()
 const tracksStore = useTracksStore()
@@ -17,7 +18,7 @@ const highlightedIndex = ref(-1)
 const track = computed(() => tracksStore.allTracks.find(t => t.id === trackId.value))
 
 const normalizedInput = computed(() =>
-  inputValue.value.toLowerCase().replace(/[^a-z0-9-]/g, ''),
+  normalizeTag(inputValue.value),
 )
 
 const suggestions = computed(() => {
@@ -44,7 +45,7 @@ watch(suggestions, () => {
 })
 
 async function addTag(name: string) {
-  const normalized = name.toLowerCase().replace(/[^a-z0-9-]/g, '')
+  const normalized = normalizeTag(name)
   if (!normalized || track.value?.tags.includes(normalized)) return
   await tracksStore.addTagToTrack(trackId.value, normalized)
   await tagsStore.loadAllTags()

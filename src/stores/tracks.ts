@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { getDb } from '../services/database'
 import { dbRowToTrackRow, type TrackRow, type TrackDbRow } from '../types/track'
+import { normalizeTag } from '../services/tag-processor'
 
 export const useTracksStore = defineStore('tracks', () => {
   const allTracks = ref<TrackRow[]>([])
@@ -110,7 +111,7 @@ export const useTracksStore = defineStore('tracks', () => {
   }
 
   async function addTagToTrack(trackId: number, tagName: string) {
-    const normalized = tagName.toLowerCase().replace(/[^a-z0-9-]/g, '')
+    const normalized = normalizeTag(tagName)
     if (!normalized) return
 
     const db = await getDb()
