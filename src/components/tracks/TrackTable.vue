@@ -9,22 +9,28 @@ import {
   type SortingState,
   type ColumnDef,
   type ColumnSizingState,
+  type VisibilityState,
+  type Header,
 } from '@tanstack/vue-table'
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useTracksStore } from '../../stores/tracks'
 import { formatDuration, formatKey } from '../../utils/constants'
+import { useContextMenu, type ContextMenuItem } from '../../composables/useContextMenu'
 import type { TrackRow } from '../../types/track'
 import CoverArtCell from './CoverArtCell.vue'
+import EditableTextCell from './EditableTextCell.vue'
 import RatingCell from './RatingCell.vue'
 import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
+const { show: showContextMenu } = useContextMenu()
 const scrollContainer = ref<HTMLElement | null>(null)
 const tableHead = ref<HTMLElement | null>(null)
 const sorting = ref<SortingState>([])
-const columnOrder       = ref<string[]>([])
-const columnSizing      = ref<ColumnSizingState>({})
-const columnSizingInfo  = ref({
+const columnOrder      = ref<string[]>([])
+const columnSizing     = ref<ColumnSizingState>({})
+const columnVisibility = ref<VisibilityState>({})
+const columnSizingInfo = ref({
   columnSizingStart: [] as [string, number][],
   deltaOffset: null as number | null,
   deltaPercentage: null as number | null,
@@ -34,8 +40,9 @@ const columnSizingInfo  = ref({
 })
 
 const LOCKED_COLS = new Set(['rowNumber', 'coverArt'])
-const STORAGE_ORDER = 'traktor-column-order'
-const STORAGE_SIZES  = 'traktor-column-sizes'
+const STORAGE_ORDER      = 'traktor-column-order'
+const STORAGE_SIZES      = 'traktor-column-sizes'
+const STORAGE_VISIBILITY = 'traktor-column-visibility'
 
 // ── Drag-to-reorder (mouse events — HTML5 DnD unreliable in WKWebView) ────────
 const draggingId = ref<string | null>(null)
@@ -143,10 +150,11 @@ const table = useVueTable({
   get data() { return tracksStore.filteredTracks },
   columns,
   state: {
-    get sorting()          { return sorting.value },
-    get columnOrder()      { return columnOrder.value },
-    get columnSizing()     { return columnSizing.value },
-    get columnSizingInfo() { return columnSizingInfo.value },
+    get sorting()           { return sorting.value },
+    get columnOrder()       { return columnOrder.value },
+    get columnSizing()      { return columnSizing.value },
+    get columnVisibility()  { return columnVisibility.value },
+    get columnSizingInfo()  { return columnSizingInfo.value },
   },
   onSortingChange: u => {
     sorting.value = typeof u === 'function' ? u(sorting.value) : u
@@ -158,6 +166,10 @@ const table = useVueTable({
   onColumnSizingChange: u => {
     columnSizing.value = typeof u === 'function' ? u(columnSizing.value) : u
     localStorage.setItem(STORAGE_SIZES, JSON.stringify(columnSizing.value))
+  },
+  onColumnVisibilityChange: u => {
+    columnVisibility.value = typeof u === 'function' ? u(columnVisibility.value) : u
+    localStorage.setItem(STORAGE_VISIBILITY, JSON.stringify(columnVisibility.value))
   },
   onColumnSizingInfoChange: u => {
     columnSizingInfo.value = typeof u === 'function' ? u(columnSizingInfo.value) : u
@@ -189,7 +201,53 @@ onMounted(() => {
     const savedSizes = localStorage.getItem(STORAGE_SIZES)
     if (savedSizes) columnSizing.value = JSON.parse(savedSizes)
   } catch { /* ignore */ }
+
+  try {
+    const savedVis = localStorage.getItem(STORAGE_VISIBILITY)
+    if (savedVis) columnVisibility.value = JSON.parse(savedVis)
+  } catch { /* ignore */ }
 })
+
+// ── Column visibility context menu ────────────────────────────────────────────
+// Returns the column's header string, falling back to its id if the header is a render function
+function colLabel(col: { columnDef: { header: unknown }, id: string }): string {
+  return typeof col.columnDef.header === 'string' ? col.columnDef.header : col.id
+}
+
+// Re-inserts a hidden column into columnOrder right after `afterColId`, then makes it visible.
+// TanStack keeps hidden columns in the order array, so we can place them before showing.
+function showColumnAfter(showColId: string, afterColId: string) {
+  const order = [...columnOrder.value]
+  const fromIdx = order.indexOf(showColId)
+  if (fromIdx !== -1) {
+    order.splice(fromIdx, 1)
+    const afterIdx = order.indexOf(afterColId)
+    order.splice(afterIdx !== -1 ? afterIdx + 1 : order.length, 0, showColId)
+    columnOrder.value = order
+    localStorage.setItem(STORAGE_ORDER, JSON.stringify(order))
+  }
+  table.getColumn(showColId)?.toggleVisibility(true)
+}
+
+function onHeaderContextMenu(e: MouseEvent, header: Header<TrackRow, unknown>) {
+  e.preventDefault()
+  const col = header.column
+  const hidden = table.getAllLeafColumns().filter(c => !c.getIsVisible())
+
+  const menuItems: ContextMenuItem[] = [
+    { label: `Hide "${colLabel(col)}"`, action: () => col.toggleVisibility(false) },
+  ]
+
+  hidden.forEach((hiddenCol, i) => {
+    menuItems.push({
+      label: `Show "${colLabel(hiddenCol)}"`,
+      action: () => showColumnAfter(hiddenCol.id, col.id),
+      ...(i === 0 ? { divider: true } : {}),
+    })
+  })
+
+  showContextMenu(e.clientX, e.clientY, menuItems)
+}
 
 // ── Virtualizer ───────────────────────────────────────────────────────────────
 const rows       = computed(() => table.getRowModel().rows)
@@ -231,6 +289,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
             'drag-over-right': dragOverSide(header.column.id) === 'right',
           }"
           :data-col-id="header.column.id"
+          @contextmenu.prevent="onHeaderContextMenu($event, header)"
         >
           <!-- Drag + sort area -->
           <div
@@ -296,6 +355,21 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
                 v-else-if="cell.column.id === 'rating'"
                 :value="rows[vRow.index].original.rating"
                 :track-id="rows[vRow.index].original.id"
+              />
+              <EditableTextCell
+                v-else-if="cell.column.id === 'title'"
+                :value="rows[vRow.index].original.title"
+                :on-save="(v) => tracksStore.updateTitle(rows[vRow.index].original.id, v)"
+              />
+              <EditableTextCell
+                v-else-if="cell.column.id === 'artist'"
+                :value="rows[vRow.index].original.artist"
+                :on-save="(v) => tracksStore.updateArtist(rows[vRow.index].original.id, v)"
+              />
+              <EditableTextCell
+                v-else-if="cell.column.id === 'genre'"
+                :value="rows[vRow.index].original.genre"
+                :on-save="(v) => tracksStore.updateGenre(rows[vRow.index].original.id, v)"
               />
               <TagCell
                 v-else-if="cell.column.id === 'tags'"

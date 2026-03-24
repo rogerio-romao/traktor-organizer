@@ -100,6 +100,26 @@ export const useTracksStore = defineStore('tracks', () => {
     if (track) track.genre = genre
   }
 
+  async function updateArtist(trackId: number, artist: string) {
+    const db = await getDb()
+    await db.execute(
+      "UPDATE tracks SET artist = $1, updated_at = datetime('now') WHERE id = $2",
+      [artist, trackId],
+    )
+    const track = allTracks.value.find(t => t.id === trackId)
+    if (track) track.artist = artist
+  }
+
+  async function updateTitle(trackId: number, title: string) {
+    const db = await getDb()
+    await db.execute(
+      "UPDATE tracks SET title = $1, updated_at = datetime('now') WHERE id = $2",
+      [title, trackId],
+    )
+    const track = allTracks.value.find(t => t.id === trackId)
+    if (track) track.title = title
+  }
+
   async function updateRating(trackId: number, rating: number) {
     const db = await getDb()
     await db.execute(
@@ -171,6 +191,8 @@ export const useTracksStore = defineStore('tracks', () => {
     ratingFilter,
     loadAllTracks,
     updateGenre,
+    updateArtist,
+    updateTitle,
     updateRating,
     addTagToTrack,
     removeTagFromTrack,
