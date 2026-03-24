@@ -18,7 +18,7 @@ function handleOpenPlaylist(playlist: Playlist) {
 onMounted(() => playlistsStore.loadPlaylists())
 
 async function deletePlaylist(playlist: Playlist) {
-  const ok = await confirm(`Delete "${playlist.name}"?`)
+  const ok = await confirm(`Delete "${playlist.name}"?`, 'Delete')
   if (!ok) return
   if (activePlaylist.value?.id === playlist.id) activePlaylist.value = null
   await playlistsStore.deletePlaylist(playlist.id)

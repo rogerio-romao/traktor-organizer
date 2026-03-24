@@ -1,22 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { save } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { usePlaylistView } from '../../composables/usePlaylistView'
 import { useTracksStore } from '../../stores/tracks'
+import { useConfirm } from '../../composables/useConfirm'
 import { buildPlaylistNml } from '../../services/nml-exporter'
 
-const { activePlaylist, playlistTracks, closePlaylist } = usePlaylistView()
+const { activePlaylist, playlistTracks, closePlaylist, hasTrackEdits, hasRemovals, hasPendingUpdate } = usePlaylistView()
 const tracksStore = useTracksStore()
+const { confirm } = useConfirm()
 const exporting = ref(false)
 
-function goBack() {
+const isDirty = computed(() => hasTrackEdits.value || hasRemovals.value || hasPendingUpdate.value)
+
+async function goBack() {
+  if (isDirty.value) {
+    const ok = await confirm('Unsaved changes will be lost. Go back anyway?', 'Go back')
+    if (!ok) return
+  }
   tracksStore.clearFilters()
   closePlaylist()
 }
 
 async function exportPlaylist() {
   if (!activePlaylist.value || exporting.value) return
+  if (isDirty.value) {
+    const ok = await confirm('Playlist has unsaved changes. Export current state anyway?', 'Export')
+    if (!ok) return
+  }
   exporting.value = true
   try {
     const path = await save({

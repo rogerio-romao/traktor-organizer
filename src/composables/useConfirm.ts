@@ -2,11 +2,13 @@ import { ref } from 'vue'
 
 const visible = ref(false)
 const message = ref('')
+const confirmLabel = ref('Confirm')
 let resolveCallback: ((confirmed: boolean) => void) | null = null
 
 export function useConfirm() {
-  function confirm(msg: string): Promise<boolean> {
+  function confirm(msg: string, label = 'Confirm'): Promise<boolean> {
     message.value = msg
+    confirmLabel.value = label
     visible.value = true
     return new Promise(resolve => {
       resolveCallback = resolve
@@ -19,5 +21,5 @@ export function useConfirm() {
     resolveCallback = null
   }
 
-  return { visible, message, confirm, respond }
+  return { visible, message, confirmLabel, confirm, respond }
 }

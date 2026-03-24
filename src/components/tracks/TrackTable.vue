@@ -37,7 +37,7 @@ const { show: showContextMenu } = useContextMenu()
 const { confirm } = useConfirm()
 
 async function handleRemoveTrack(trackId: number) {
-  const ok = await confirm('Remove this track from the playlist?')
+  const ok = await confirm('Remove this track from the playlist?', 'Remove')
   if (ok) removeTrack(trackId)
 }
 const scrollContainer = ref<HTMLElement | null>(null)

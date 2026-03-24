@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useConfirm } from '../../composables/useConfirm'
 
-const { visible, message, respond } = useConfirm()
+const { visible, message, confirmLabel, respond } = useConfirm()
 </script>
 
 <template>
@@ -11,7 +11,7 @@ const { visible, message, respond } = useConfirm()
         <p class="dialog-message">{{ message }}</p>
         <div class="dialog-actions">
           <button class="btn-cancel" @click="respond(false)">Cancel</button>
-          <button class="btn-confirm" @click="respond(true)">Delete</button>
+          <button class="btn-confirm" @click="respond(true)">{{ confirmLabel }}</button>
         </div>
       </div>
     </div>
