@@ -7,9 +7,29 @@ import { formatKey, OPEN_KEY_TO_STANDARD } from '../../utils/constants'
 const tracksStore = useTracksStore()
 const { open: openPlaylistSave } = usePlaylistSave()
 
+function getDefaultPlaylistName(): string {
+  const activeCount = [
+    !!tracksStore.globalSearch.trim(),
+    tracksStore.genreFilter !== null,
+    tracksStore.keyFilter !== null,
+    tracksStore.ratingFilter !== null,
+    tracksStore.activeTagFilters.length > 0,
+  ].filter(Boolean).length
+
+  if (activeCount !== 1) return ''
+
+  if (tracksStore.globalSearch.trim()) return tracksStore.globalSearch.trim()
+  if (tracksStore.genreFilter) return tracksStore.genreFilter
+  if (tracksStore.keyFilter) return `${formatKey(tracksStore.keyFilter, 'standard')} Scale`
+  if (tracksStore.ratingFilter) return `${tracksStore.ratingFilter}+ Stars`
+  if (tracksStore.activeTagFilters.length === 1) return tracksStore.activeTagFilters[0]
+
+  return ''
+}
+
 function saveAsPlaylist() {
   const ids = tracksStore.filteredTracks.map(t => t.id)
-  openPlaylistSave('', ids)
+  openPlaylistSave(getDefaultPlaylistName(), ids)
 }
 
 const genres = computed(() => {
@@ -20,11 +40,9 @@ const genres = computed(() => {
 // All Open Key values present in the collection, sorted numerically (1–12, d before m)
 const keys = computed(() => {
   const unique = new Set(tracksStore.allTracks.map(t => t.musicalKey).filter(Boolean))
-  return [...unique].sort((a, b) => {
-    const numA = parseInt(a), numB = parseInt(b)
-    if (numA !== numB) return numA - numB
-    return a.endsWith('d') ? -1 : 1
-  })
+  return [...unique].sort((a, b) =>
+    (formatKey(a, 'standard') || a).localeCompare(formatKey(b, 'standard') || b)
+  )
 })
 
 const hasAnyFilter = computed(() =>
