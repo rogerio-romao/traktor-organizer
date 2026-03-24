@@ -134,6 +134,8 @@ function onBackdropClick(e: MouseEvent) {
               type="text"
               placeholder="Add tag…"
               autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
               @keydown="onKeydown"
               @focus="showSuggestions = suggestions.length > 0"
               @blur="onInputBlur"

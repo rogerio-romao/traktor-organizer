@@ -8,7 +8,7 @@ import { formatKey } from '../../utils/constants'
 
 const tracksStore = useTracksStore()
 const { open: openPlaylistSave } = usePlaylistSave()
-const { activePlaylist, playlistTracks, hasRemovals, hasPendingUpdate, updatePlaylist } = usePlaylistView()
+const { activePlaylist, playlistTracks, hasRemovals, hasPendingUpdate, hasTrackEdits, updatePlaylist } = usePlaylistView()
 
 // Genre/key source: playlist tracks when viewing a playlist, full collection otherwise
 const sourceTracks = computed(() => activePlaylist.value ? playlistTracks.value : tracksStore.allTracks)
@@ -33,9 +33,9 @@ const hasAnyFilter = computed(() =>
   tracksStore.ratingFilter !== null,
 )
 
-// "Update playlist" is active when tracks were removed, a filter is applied, or a suggested update was accepted
+// "Update playlist" is active when tracks were removed, edited, a filter is applied, or a suggested update was accepted
 const isModified = computed(() =>
-  !!activePlaylist.value && (hasRemovals.value || hasPendingUpdate.value || hasAnyFilter.value || !!tracksStore.globalSearch.trim())
+  !!activePlaylist.value && (hasRemovals.value || hasPendingUpdate.value || hasTrackEdits.value || hasAnyFilter.value || !!tracksStore.globalSearch.trim())
 )
 
 function getDefaultPlaylistName(): string {
@@ -152,6 +152,7 @@ const keys = computed(() => {
     <button
       v-if="activePlaylist"
       class="btn-update-playlist"
+      :class="{ active: isModified }"
       :disabled="!isModified"
       title="Save changes back to this playlist"
       @click="handleUpdatePlaylist"
@@ -278,6 +279,10 @@ const keys = computed(() => {
 }
 .btn-save-playlist:hover,
 .btn-update-playlist:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-update-playlist.active {
   border-color: var(--accent);
   color: var(--accent);
 }

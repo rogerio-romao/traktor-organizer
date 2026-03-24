@@ -32,7 +32,7 @@ import RatingCell from './RatingCell.vue'
 import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
-const { activePlaylist, suggestedTracks, applySuggestedUpdate, removeTrack } = usePlaylistView()
+const { activePlaylist, suggestedTracks, applySuggestedUpdate, removeTrack, hasRemovals, hasTrackEdits } = usePlaylistView()
 const { show: showContextMenu } = useContextMenu()
 const { confirm } = useConfirm()
 
@@ -456,9 +456,13 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
         of {{ tracksStore.allTracks.length.toLocaleString() }}
       </template>
 
-      <template v-if="driftMessage">
+      <template v-if="hasTrackEdits || hasRemovals">
         <span class="footer-drift-sep">·</span>
-        <span class="footer-drift-msg">{{ driftMessage }}</span>
+        <span class="footer-warning-msg">Unsaved changes</span>
+      </template>
+      <template v-else-if="driftMessage">
+        <span class="footer-drift-sep">·</span>
+        <span class="footer-warning-msg">{{ driftMessage }}</span>
         <button class="footer-drift-btn" @click="applySuggestedUpdate">Apply</button>
       </template>
     </div>
@@ -637,11 +641,11 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
   opacity: 0.4;
 }
 
-.footer-drift-msg {
+.footer-warning-msg {
+  color: var(--accent);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--accent);
 }
 
 .footer-drift-btn {

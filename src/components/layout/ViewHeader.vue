@@ -1,13 +1,35 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { save } from '@tauri-apps/plugin-dialog'
+import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { usePlaylistView } from '../../composables/usePlaylistView'
 import { useTracksStore } from '../../stores/tracks'
+import { buildPlaylistNml } from '../../services/nml-exporter'
 
 const { activePlaylist, playlistTracks, closePlaylist } = usePlaylistView()
 const tracksStore = useTracksStore()
+const exporting = ref(false)
 
 function goBack() {
   tracksStore.clearFilters()
   closePlaylist()
+}
+
+async function exportPlaylist() {
+  if (!activePlaylist.value || exporting.value) return
+  exporting.value = true
+  try {
+    const path = await save({
+      defaultPath: `${activePlaylist.value.name}.nml`,
+      filters: [{ name: 'NML Playlist', extensions: ['nml'] }],
+    })
+    if (!path) return
+    const finalPath = path.endsWith('.nml') ? path : path + '.nml'
+    const nml = buildPlaylistNml(activePlaylist.value.name, playlistTracks.value)
+    await writeTextFile(finalPath, nml)
+  } finally {
+    exporting.value = false
+  }
 }
 </script>
 
@@ -18,6 +40,9 @@ function goBack() {
       <span class="playlist-name">{{ activePlaylist!.name }}</span>
       <span class="playlist-meta">{{ playlistTracks.length }} track{{ playlistTracks.length === 1 ? '' : 's' }}</span>
     </div>
+    <button class="btn-export" :disabled="exporting" title="Export as NML playlist" @click="exportPlaylist">
+      {{ exporting ? 'Exporting…' : '↓ Export playlist' }}
+    </button>
   </div>
 </template>
 
@@ -68,4 +93,23 @@ function goBack() {
   color: var(--text-secondary);
   flex-shrink: 0;
 }
+
+.btn-export {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 26px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-export:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.btn-export:disabled { opacity: 0.4; cursor: default; }
 </style>
