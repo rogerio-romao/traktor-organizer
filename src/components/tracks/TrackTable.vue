@@ -25,7 +25,6 @@ import TagCell from './TagCell.vue'
 const tracksStore = useTracksStore()
 const { show: showContextMenu } = useContextMenu()
 const scrollContainer = ref<HTMLElement | null>(null)
-const tableHead = ref<HTMLElement | null>(null)
 const sorting = ref<SortingState>([])
 const columnOrder      = ref<string[]>([])
 const columnSizing     = ref<ColumnSizingState>({})
@@ -100,11 +99,6 @@ function dragOverSide(colId: string): 'left' | 'right' | null {
   return ti > fi ? 'right' : 'left'
 }
 
-function onBodyScroll() {
-  if (tableHead.value && scrollContainer.value) {
-    tableHead.value.scrollLeft = scrollContainer.value.scrollLeft
-  }
-}
 
 // ── Columns ───────────────────────────────────────────────────────────────────
 function roundBpm(val: number | null): string {
@@ -271,14 +265,15 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
 
 <template>
   <div class="track-table-wrapper" :style="isDragging ? { cursor: 'grabbing', userSelect: 'none' } : {}">
-    <!-- Sticky header -->
-    <div ref="tableHead" class="table-head">
-      <div
-        v-for="headerGroup in headerGroups"
-        :key="headerGroup.id"
-        class="header-row"
-        :style="{ width: totalColumnsWidth + 'px' }"
-      >
+    <!-- Single scroll container: header is sticky inside it, so both axes stay in sync naturally -->
+    <div ref="scrollContainer" class="table-scroll">
+      <div :style="{ width: totalColumnsWidth + 'px' }">
+        <div class="table-head">
+          <div
+            v-for="headerGroup in headerGroups"
+            :key="headerGroup.id"
+            class="header-row"
+          >
         <div
           v-for="header in headerGroup.headers"
           :key="header.id"
@@ -315,24 +310,23 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
             :class="{ resizing: header.column.getIsResizing() }"
             @mousedown.prevent="header.getResizeHandler()($event)"
           />
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Virtualized body -->
-    <div ref="scrollContainer" class="table-body" @scroll="onBodyScroll">
+      <!-- Body -->
       <div v-if="tracksStore.isLoading" class="empty-state">Loading…</div>
       <div v-else-if="rows.length === 0" class="empty-state">
         {{ tracksStore.allTracks.length === 0 ? 'No tracks imported yet.' : 'No tracks match the current filters.' }}
       </div>
-      <div v-else :style="{ height: totalSize + 'px', position: 'relative' }">
+      <div v-else :style="{ width: totalColumnsWidth + 'px', height: totalSize + 'px', position: 'relative' }">
         <div
           v-for="vRow in virtualRows"
           :key="String(vRow.key)"
           class="table-row"
           :style="{
             position: 'absolute', top: 0, left: 0,
-            width: totalColumnsWidth + 'px',
+            width: '100%',
             height: ROW_HEIGHT + 'px',
             transform: `translateY(${vRow.start}px)`,
           }"
@@ -384,6 +378,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
         </div>
       </div>
     </div>
+    </div>
 
     <!-- Footer count -->
     <div class="table-footer">
@@ -404,10 +399,18 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
   font-size: 12px;
 }
 
+/* ── Scroll container ───────────────────── */
+.table-scroll {
+  flex: 1;
+  overflow: auto;
+  overscroll-behavior: none;
+}
+
 /* ── Header ─────────────────────────────── */
 .table-head {
-  flex-shrink: 0;
-  overflow-x: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 10;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
 }
@@ -467,11 +470,6 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
 .resize-handle.resizing { background: var(--accent); }
 
 /* ── Body ───────────────────────────────── */
-.table-body {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: auto;
-}
 
 .empty-state {
   display: flex;
