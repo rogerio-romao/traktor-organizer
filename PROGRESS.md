@@ -78,15 +78,19 @@ All scaffolding, database, parsing, import, and table rendering is working.
 
 ---
 
-## Phase 2: Editing + Filtering — NOT STARTED
+## Phase 2: Editing + Filtering — IN PROGRESS
 
-1. Tag editing: `TagEditor.vue` (popover/modal with add/remove), autocomplete from existing tags
-2. Tag cloud sidebar: `AppSidebar.vue`, `TagCloud.vue` with counts, AND filtering; active filters shown as dismissible pills
-3. Tag pill right-click in table: add "Filter by tag" / "Remove from filter" (dynamic label) to the context menu — wires into the same `activeTagFilters` as the sidebar
+### Done
+1. Tag editing: `TagEditor.vue` — centered modal, add/remove tags, autocomplete from DB tags
+2. Tag cloud sidebar: `AppSidebar.vue` + `TagCloud.vue`, collapsible + resizable, AND filtering, active filter pills above table
+3. Tag pill click-to-filter in track table — click pill to toggle filter, active pills show orange border; − button removes tag from track
+
+### Remaining
 4. Per-column filters: Genre dropdown, Key picker, Rating minimum
 5. Genre inline editing (`GenreCell.vue`)
 6. Rating click-to-edit (`RatingCell.vue`)
-7. Re-import with merge stats summary (UI for showing what changed)
+
+Note: item 7 (re-import merge stats UI) dropped — current new/updated/skipped counts are sufficient.
 
 ---
 
