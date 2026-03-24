@@ -10,7 +10,7 @@ defineProps<{ tags: string[] }>()
       v-for="tag in tags"
       :key="tag"
       class="tag-pill"
-      :style="{ background: getTagColor(tag).bg, color: getTagColor(tag).text }"
+      :style="{ background: getTagColor(tag).bg, borderColor: getTagColor(tag).border }"
     >{{ tag }}</span>
   </div>
 </template>
@@ -18,17 +18,23 @@ defineProps<{ tags: string[] }>()
 <style scoped>
 .tag-cell {
   display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
+  flex-wrap: nowrap;
+  gap: 8px;
   align-items: center;
   padding: 2px 0;
+  overflow: hidden;
 }
 .tag-pill {
   display: inline-block;
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
   white-space: nowrap;
   line-height: 16px;
+  color: var(--text-primary, #e0e0e0);
 }
 </style>

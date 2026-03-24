@@ -69,10 +69,12 @@ so it ran the old compiled version. Start session by running `pnpm tauri dev` an
 
 ## Phase 1.5: Polish + Foundation — NOT STARTED
 
-### 1. Column reordering
+### 1. Column reordering and resizing
 - Drag and drop columns left/right in the table header
-- All columns draggable except `#` (row number) and cover art
-- Persist column order in `localStorage`
+- Drag column edges to resize width
+- All columns resizable except `#` (row number) and cover art; all draggable except those two as well
+- Drag and drop columns left/right in the table header
+- Persist column order and widths in `localStorage`
 
 ### 2. Right-click context menu + playlist creation
 - Global: suppress default browser context menu, build a Vue context menu component
