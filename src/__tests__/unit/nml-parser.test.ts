@@ -71,15 +71,30 @@ describe('parseNmlCollection', () => {
     expect(tracks[2].rating).toBe(5)
   })
 
-  it('converts MUSICAL_KEY VALUE (0–23) to Open Key notation', () => {
+  it('treats MUSICAL_KEY VALUE=0 as unanalyzed (maps to empty string)', () => {
+    // Traktor uses VALUE=0 as a sentinel meaning "key not analysed yet".
+    // MUSICAL_KEY_VALUE_TO_OPEN_KEY[0] intentionally maps to '' rather than '1m'.
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
-  <COLLECTION ENTRIES="2">
+  <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Track1">
       <LOCATION DIR="/:path/:to/:" FILE="track1.mp3" VOLUME="osx" VOLUMEID="osx"/>
       <INFO PLAYTIME="180"/>
       <MUSICAL_KEY VALUE="0"/>
     </ENTRY>
+  </COLLECTION>
+</NML>`
+
+    const tracks = parseNmlCollection(xml)
+
+    expect(tracks[0].musicalKey).toBe('')
+    expect(tracks[0].musicalKeyValue).toBe(0)
+  })
+
+  it('converts MUSICAL_KEY VALUE (1–23) to Open Key notation', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<NML VERSION="19">
+  <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Track2">
       <LOCATION DIR="/:path/:to/:" FILE="track2.mp3" VOLUME="osx" VOLUMEID="osx"/>
       <INFO PLAYTIME="180"/>
@@ -90,10 +105,8 @@ describe('parseNmlCollection', () => {
 
     const tracks = parseNmlCollection(xml)
 
-    expect(tracks[0].musicalKey).toBe('')
-    expect(tracks[0].musicalKeyValue).toBe(0)
-    expect(tracks[1].musicalKey).toBe('4d')
-    expect(tracks[1].musicalKeyValue).toBe(10)
+    expect(tracks[0].musicalKey).toBe('4d')
+    expect(tracks[0].musicalKeyValue).toBe(10)
   })
 
   it('prefers INFO KEY over MUSICAL_KEY VALUE', () => {

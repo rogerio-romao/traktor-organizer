@@ -62,10 +62,4 @@ describe('splitCommentIntoTags', () => {
     const result = splitCommentIntoTags('house   techno') // double space splits to empty
     expect(result).toEqual(['house', 'techno'])
   })
-
-  it('filters blocklist entries', () => {
-    const blocklist = new Set(['bad', 'ugly'])
-    const result = splitCommentIntoTags('good bad good ugly', blocklist)
-    expect(result).toEqual(['good'])
-  })
 })

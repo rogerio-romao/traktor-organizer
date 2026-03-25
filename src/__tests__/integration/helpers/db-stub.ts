@@ -2,9 +2,12 @@
  * In-memory DB stub for integration tests.
  *
  * Usage per test file:
- *   const db = createDbState()
- *   vi.mock('../../../services/database', () => makeDbMock(db))
- *   beforeEach(() => resetDbState(db))
+ *   let s: DbState
+ *   vi.mock('../../services/database', () => makeDbMock(() => s))
+ *   beforeEach(() => { s = createDbState() })
+ *
+ * The getter form `() => s` is required so the closure always reads the
+ * current DbState after it is reassigned in beforeEach.
  */
 
 export interface DbState {

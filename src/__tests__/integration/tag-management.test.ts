@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { createDbState, makeDbMock, type DbState } from './helpers/db-stub'
 import { useTracksStore } from '../../stores/tracks'
+// addToTagBlocklist lives on the database service, not the store —
+// the store has no wrapper method for it, so we call it directly here.
 import { addToTagBlocklist } from '../../services/database'
 
 // ── Test setup ───────────────────────────────────────────────────────────────
@@ -213,5 +215,22 @@ describe('addToTagBlocklist', () => {
     await addToTagBlocklist('vocal')
 
     expect(s.tag_blocklist.filter((r: any) => r.name === 'vocal')).toHaveLength(1)
+  })
+
+  it('tag no longer appears on tracks after store reload', async () => {
+    seedTrack(1)
+    seedTrack(2)
+    seedTag(5, 'vocal')
+    seedTrackTag(1, 5)
+    seedTrackTag(2, 5)
+
+    const store = useTracksStore()
+    await store.loadAllTracks()
+    expect(store.allTracks[0].tags).toContain('vocal')
+
+    await addToTagBlocklist('vocal')
+    await store.loadAllTracks()
+
+    expect(store.allTracks.every((t) => !t.tags.includes('vocal'))).toBe(true)
   })
 })
