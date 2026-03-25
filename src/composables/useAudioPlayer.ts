@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import type { TrackRow } from '../types/track'
 
@@ -34,15 +34,16 @@ function fadeOut(audio: HTMLAudioElement, ms = FADE_MS): Promise<void> {
 }
 
 // Module-level singleton state
-const audio        = new Audio()
-const currentTrack = ref<TrackRow | null>(null)
-const isPlaying    = ref(false)
-const currentTime  = ref(0)
-const duration     = ref(0)
+const audio         = new Audio()
+const currentTrack  = ref<TrackRow | null>(null)
+const isPlaying     = ref(false)
+const currentTime   = ref(0)
+const duration      = ref(0)
 const scrollRequest = ref<{ trackId: number; seq: number } | null>(null)
 let scrollSeq = 0
-const playError = ref<string | null>(null)
+const playError     = ref<string | null>(null)
 let playErrorTimer: ReturnType<typeof setTimeout> | null = null
+const queue         = ref<TrackRow[]>([])
 
 function setPlayError(msg: string) {
   if (playErrorTimer) clearTimeout(playErrorTimer)
@@ -50,9 +51,56 @@ function setPlayError(msg: string) {
   playErrorTimer = setTimeout(() => { playError.value = null }, 4000)
 }
 
+async function loadAndPlay(track: TrackRow) {
+  if (isPlaying.value) {
+    await fadeOut(audio)
+    audio.pause()
+  }
+
+  currentTrack.value = track
+  currentTime.value  = 0
+  duration.value     = 0
+  audio.src          = convertFileSrc(track.filePath)
+  audio.volume       = 0
+
+  await new Promise<void>(resolve => {
+    if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) { resolve(); return }
+    audio.addEventListener('canplay', () => resolve(), { once: true })
+    audio.addEventListener('error',   () => resolve(), { once: true })
+  })
+
+  try {
+    await audio.play()
+    fadeIn(audio)
+    isPlaying.value = true
+  } catch {
+    isPlaying.value = false
+    setPlayError(`Cannot play: ${track.title || track.fileName}`)
+    // If in queue mode, skip to next
+    if (queue.value.length > 0) {
+      const idx = queue.value.findIndex(t => t.id === track.id)
+      if (idx >= 0 && idx < queue.value.length - 1) {
+        void loadAndPlay(queue.value[idx + 1])
+      }
+    }
+  }
+}
+
 audio.addEventListener('timeupdate',     () => { currentTime.value = audio.currentTime })
 audio.addEventListener('durationchange', () => { duration.value = isNaN(audio.duration) ? 0 : audio.duration })
-audio.addEventListener('ended',          () => { isPlaying.value = false })
+audio.addEventListener('ended', () => {
+  if (queue.value.length > 0) {
+    const idx = queue.value.findIndex(t => t.id === currentTrack.value?.id)
+    if (idx >= 0 && idx < queue.value.length - 1) {
+      void loadAndPlay(queue.value[idx + 1])
+    } else {
+      isPlaying.value = false
+      queue.value = []
+    }
+  } else {
+    isPlaying.value = false
+  }
+})
 
 export function isAiff(track: TrackRow): boolean {
   const n = track.fileName.toLowerCase()
@@ -81,32 +129,15 @@ export function useAudioPlayer() {
       return
     }
 
-    if (isPlaying.value) {
-      await fadeOut(audio)
-      audio.pause()
-    }
+    queue.value = [] // manual selection exits queue mode
+    await loadAndPlay(track)
+  }
 
-    currentTrack.value = track
-    currentTime.value = 0
-    duration.value = 0
-    audio.src = convertFileSrc(track.filePath)
-    audio.volume = 0
-
-    // Wait until the browser has enough data to play before calling play().
-    // Without this, play() rejects on the first call while the asset is still loading.
-    await new Promise<void>(resolve => {
-      if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) { resolve(); return }
-      audio.addEventListener('canplay', () => resolve(), { once: true })
-      audio.addEventListener('error',   () => resolve(), { once: true })
-    })
-
-    try {
-      await audio.play()
-      fadeIn(audio)
-      isPlaying.value = true
-    } catch {
-      isPlaying.value = false
-      setPlayError(`Cannot play: ${track.title || track.fileName}`)
+  function setQueue(tracks: TrackRow[], startIndex = 0) {
+    const playable = tracks.filter(t => !isAiff(t))
+    queue.value = playable
+    if (playable.length > 0) {
+      void loadAndPlay(playable[Math.min(startIndex, playable.length - 1)])
     }
   }
 
@@ -140,6 +171,22 @@ export function useAudioPlayer() {
     }
   }
 
+  function playNext() {
+    if (queue.value.length === 0) return
+    const idx = queue.value.findIndex(t => t.id === currentTrack.value?.id)
+    if (idx >= 0 && idx < queue.value.length - 1) void loadAndPlay(queue.value[idx + 1])
+  }
+
+  function playPrev() {
+    if (queue.value.length === 0) return
+    const idx = queue.value.findIndex(t => t.id === currentTrack.value?.id)
+    if (idx > 0) void loadAndPlay(queue.value[idx - 1])
+  }
+
+  const queueIndex = computed(() =>
+    queue.value.length > 0 ? queue.value.findIndex(t => t.id === currentTrack.value?.id) : -1
+  )
+
   function scrollToCurrentTrack() {
     if (currentTrack.value) {
       scrollRequest.value = { trackId: currentTrack.value.id, seq: ++scrollSeq }
@@ -153,9 +200,14 @@ export function useAudioPlayer() {
     duration,
     scrollRequest,
     playError,
+    queue,
+    queueIndex,
     play,
     togglePlay,
     seek,
+    setQueue,
+    playNext,
+    playPrev,
     scrollToCurrentTrack,
   }
 }

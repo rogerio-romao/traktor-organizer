@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useAudioPlayer } from '../../composables/useAudioPlayer'
 import { extractCoverArt } from '../../services/cover-art'
 
-const { currentTrack, isPlaying, currentTime, duration, togglePlay, seek, scrollToCurrentTrack } = useAudioPlayer()
+const { currentTrack, isPlaying, currentTime, duration, queue, queueIndex, togglePlay, seek, playNext, playPrev, scrollToCurrentTrack } = useAudioPlayer()
 
 const coverDataUrl = ref<string | null>(null)
 watch(currentTrack, async (track) => {
@@ -13,6 +13,10 @@ watch(currentTrack, async (track) => {
 const progressPct = computed(() =>
   duration.value > 0 ? (currentTime.value / duration.value) * 100 : 0
 )
+
+const inQueue = computed(() => queue.value.length > 1)
+const hasPrev = computed(() => queueIndex.value > 0)
+const hasNext = computed(() => queueIndex.value >= 0 && queueIndex.value < queue.value.length - 1)
 
 function formatTime(s: number): string {
   const m = Math.floor(s / 60)
@@ -41,9 +45,31 @@ function onScrubberClick(e: MouseEvent) {
       <span class="player-title">{{ currentTrack.title }}</span>
     </div>
 
-    <button class="player-toggle" @click="togglePlay">
-      {{ isPlaying ? '⏸' : '▶' }}
-    </button>
+    <div class="player-controls">
+      <button
+        v-if="inQueue"
+        class="player-skip"
+        :disabled="!hasPrev"
+        title="Previous track"
+        @click="playPrev"
+      >⏮</button>
+
+      <button class="player-toggle" @click="togglePlay">
+        {{ isPlaying ? '⏸' : '▶' }}
+      </button>
+
+      <button
+        v-if="inQueue"
+        class="player-skip"
+        :disabled="!hasNext"
+        title="Next track"
+        @click="playNext"
+      >⏭</button>
+    </div>
+
+    <span v-if="inQueue" class="player-queue-pos">
+      {{ queueIndex + 1 }} / {{ queue.length }}
+    </span>
 
     <div class="player-scrubber" @click="onScrubberClick">
       <div class="player-progress" :style="{ width: progressPct + '%' }" />
@@ -116,6 +142,13 @@ function onScrubberClick(e: MouseEvent) {
   flex-shrink: 0;
 }
 
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .player-toggle {
   flex-shrink: 0;
   width: 28px;
@@ -131,6 +164,32 @@ function onScrubberClick(e: MouseEvent) {
   cursor: pointer;
 }
 .player-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+.player-skip {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.1s;
+}
+.player-skip:hover:not(:disabled) { color: var(--text-primary); }
+.player-skip:disabled { opacity: 0.25; cursor: default; }
+
+.player-queue-pos {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 
 .player-scrubber {
   flex: 1;

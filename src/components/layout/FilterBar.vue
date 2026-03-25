@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import { useTracksStore } from '../../stores/tracks'
 import { usePlaylistView } from '../../composables/usePlaylistView'
 import { usePlaylistSave } from '../../composables/usePlaylistSave'
+import { useAudioPlayer } from '../../composables/useAudioPlayer'
 import { filterTracks } from '../../utils/filterTracks'
 import { formatKey } from '../../utils/constants'
 
 const tracksStore = useTracksStore()
 const { open: openPlaylistSave } = usePlaylistSave()
 const { activePlaylist, playlistTracks, hasRemovals, hasPendingUpdate, hasTrackEdits, updatePlaylist } = usePlaylistView()
+const { setQueue } = useAudioPlayer()
 
 // Genre/key source: playlist tracks when viewing a playlist, full collection otherwise
 const sourceTracks = computed(() => activePlaylist.value ? playlistTracks.value : tracksStore.allTracks)
@@ -148,6 +150,10 @@ const keys = computed(() => {
       Clear all
     </button>
 
+    <button class="btn-play-all" title="Play all visible tracks" @click="setQueue(displayTracks)">
+      ▶ Play all
+    </button>
+
     <!-- In playlist mode: Update playlist button; otherwise: Save as playlist -->
     <button
       v-if="activePlaylist"
@@ -262,9 +268,28 @@ const keys = computed(() => {
 }
 .filters-clear:hover { color: var(--text-primary); }
 
+.btn-play-all {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 10px;
+  height: 26px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-play-all:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .btn-save-playlist,
 .btn-update-playlist {
-  margin-left: auto;
+  margin-left: 0;
   flex-shrink: 0;
   background: none;
   border: 1px solid var(--border);
