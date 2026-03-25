@@ -5,6 +5,7 @@ import ContextMenu from './components/common/ContextMenu.vue'
 import ConfirmDialog from './components/common/ConfirmDialog.vue'
 import PlaylistSaveDialog from './components/common/PlaylistSaveDialog.vue'
 import TagEditor from './components/tracks/TagEditor.vue'
+import MiniPlayer from './components/player/MiniPlayer.vue'
 import { runStartupMaintenance } from './services/database'
 
 onMounted(async () => {
@@ -19,6 +20,7 @@ onMounted(async () => {
     <div class="app-content">
       <RouterView />
     </div>
+    <MiniPlayer />
   </div>
   <ContextMenu />
   <ConfirmDialog />

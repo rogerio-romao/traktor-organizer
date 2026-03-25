@@ -1,31 +1,45 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { extractCoverArt } from '../../services/cover-art'
+import { useAudioPlayer, isAiff } from '../../composables/useAudioPlayer'
+import type { TrackRow } from '../../types/track'
 
-const props = defineProps<{ filePath: string }>()
+const props = defineProps<{ track: TrackRow }>()
+
+const { currentTrack, isPlaying, play } = useAudioPlayer()
 
 const dataUrl = ref<string | null>(null)
-const loaded = ref(false)
 
 async function load() {
-  loaded.value = false
-  dataUrl.value = await extractCoverArt(props.filePath)
-  loaded.value = true
+  dataUrl.value = await extractCoverArt(props.track.filePath)
 }
 
 onMounted(load)
-watch(() => props.filePath, load)
+watch(() => props.track.filePath, load)
+
+const isCurrentTrack = computed(() => currentTrack.value?.id === props.track.id)
+const aiff = computed(() => isAiff(props.track))
 </script>
 
 <template>
-  <div class="cover-art">
+  <div class="cover-art" :class="{ playing: isCurrentTrack && isPlaying }">
     <img v-if="dataUrl" :src="dataUrl" class="cover-img" alt="" />
     <div v-else class="cover-placeholder">♪</div>
+    <button
+      v-if="!aiff"
+      class="play-overlay"
+      :class="{ 'always-visible': isCurrentTrack }"
+      @click.stop="play(track)"
+    >
+      {{ isCurrentTrack && isPlaying ? '⏸' : '▶' }}
+    </button>
+    <div v-else class="aiff-badge" title="AIFF playback not supported">—</div>
   </div>
 </template>
 
 <style scoped>
 .cover-art {
+  position: relative;
   width: 40px;
   height: 40px;
   flex-shrink: 0;
@@ -47,5 +61,42 @@ watch(() => props.filePath, load)
   border-radius: 3px;
   color: var(--text-secondary, #666);
   font-size: 16px;
+}
+
+/* Play overlay button */
+.play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.cover-art:hover .play-overlay,
+.play-overlay.always-visible {
+  opacity: 1;
+}
+
+/* Subtle ring on the cell when playing */
+.cover-art.playing .cover-img,
+.cover-art.playing .cover-placeholder {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.aiff-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 11px;
 }
 </style>

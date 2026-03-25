@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 const props = withDefaults(defineProps<{
   tracks?: TrackRow[]
   loading?: boolean
@@ -22,6 +22,7 @@ import {
 import { useVirtualizer } from '@tanstack/vue-virtual'
 import { useTracksStore } from '../../stores/tracks'
 import { usePlaylistView } from '../../composables/usePlaylistView'
+import { useAudioPlayer } from '../../composables/useAudioPlayer'
 import { formatDuration, formatKey } from '../../utils/constants'
 import { useContextMenu, type ContextMenuItem } from '../../composables/useContextMenu'
 import { useConfirm } from '../../composables/useConfirm'
@@ -33,6 +34,7 @@ import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
 const { activePlaylist, suggestedTracks, applySuggestedUpdate, removeTrack, hasRemovals, hasTrackEdits } = usePlaylistView()
+const { scrollRequest } = useAudioPlayer()
 const { show: showContextMenu } = useContextMenu()
 const { confirm } = useConfirm()
 
@@ -138,7 +140,7 @@ const columns: ColumnDef<TrackRow, any>[] = [
   }),
   columnHelper.display({
     id: 'coverArt',
-    header: '',
+    header: 'Play',
     size: 56, minSize: 56, maxSize: 56,
     enableSorting: false,
     enableResizing: false,
@@ -290,6 +292,13 @@ const isLoading = computed(() =>
   props.tracks !== undefined ? (props.loading ?? false) : tracksStore.isLoading
 )
 
+// Scroll to a track when the audio player requests it
+watch(scrollRequest, (req) => {
+  if (!req) return
+  const idx = rows.value.findIndex(r => r.original.id === req.trackId)
+  if (idx !== -1) virtualizer.value?.scrollToIndex(idx, { align: 'center' })
+})
+
 const driftMessage = computed(() => {
   if (!suggestedTracks.value || !activePlaylist.value) return null
   const saved   = activePlaylist.value.trackCount
@@ -403,7 +412,7 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
               </span>
               <CoverArtCell
                 v-else-if="cell.column.id === 'coverArt'"
-                :file-path="rows[vRow.index].original.filePath"
+                :track="rows[vRow.index].original"
               />
               <RatingCell
                 v-else-if="cell.column.id === 'rating'"
