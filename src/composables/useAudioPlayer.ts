@@ -41,6 +41,14 @@ const currentTime  = ref(0)
 const duration     = ref(0)
 const scrollRequest = ref<{ trackId: number; seq: number } | null>(null)
 let scrollSeq = 0
+const playError = ref<string | null>(null)
+let playErrorTimer: ReturnType<typeof setTimeout> | null = null
+
+function setPlayError(msg: string) {
+  if (playErrorTimer) clearTimeout(playErrorTimer)
+  playError.value = msg
+  playErrorTimer = setTimeout(() => { playError.value = null }, 4000)
+}
 
 audio.addEventListener('timeupdate',     () => { currentTime.value = audio.currentTime })
 audio.addEventListener('durationchange', () => { duration.value = isNaN(audio.duration) ? 0 : audio.duration })
@@ -98,6 +106,7 @@ export function useAudioPlayer() {
       isPlaying.value = true
     } catch {
       isPlaying.value = false
+      setPlayError(`Cannot play: ${track.title || track.fileName}`)
     }
   }
 
@@ -143,6 +152,7 @@ export function useAudioPlayer() {
     currentTime,
     duration,
     scrollRequest,
+    playError,
     play,
     togglePlay,
     seek,

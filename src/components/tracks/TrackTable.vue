@@ -34,7 +34,7 @@ import TagCell from './TagCell.vue'
 
 const tracksStore = useTracksStore()
 const { activePlaylist, suggestedTracks, applySuggestedUpdate, removeTrack, hasRemovals, hasTrackEdits } = usePlaylistView()
-const { scrollRequest } = useAudioPlayer()
+const { scrollRequest, playError } = useAudioPlayer()
 const { show: showContextMenu } = useContextMenu()
 const { confirm } = useConfirm()
 
@@ -465,7 +465,11 @@ const totalSize   = computed(() => virtualizer.value.getTotalSize())
         of {{ tracksStore.allTracks.length.toLocaleString() }}
       </template>
 
-      <template v-if="hasTrackEdits || hasRemovals">
+      <template v-if="playError">
+        <span class="footer-drift-sep">·</span>
+        <span class="footer-warning-msg">{{ playError }}</span>
+      </template>
+      <template v-else-if="hasTrackEdits || hasRemovals">
         <span class="footer-drift-sep">·</span>
         <span class="footer-warning-msg">Unsaved changes</span>
       </template>
