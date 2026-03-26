@@ -1,9 +1,12 @@
-import { describe, it, expect } from 'vitest'
-import { parseNmlCollection } from '../../services/nml-parser'
+import { describe, expect, it } from 'vitest';
 
+import { parseNmlCollection } from '@/services/nml-parser';
+
+// oxlint-disable-next-line max-lines-per-function
 describe('parseNmlCollection', () => {
-  it('parses minimal valid NML XML and returns correct field values', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    // oxlint-disable-next-line max-statements
+    it('parses minimal valid NML XML and returns correct field values', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Test Track" ARTIST="Test Artist">
@@ -13,23 +16,23 @@ describe('parseNmlCollection', () => {
       <MUSICAL_KEY VALUE="10"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks).toHaveLength(1)
-    expect(tracks[0].title).toBe('Test Track')
-    expect(tracks[0].artist).toBe('Test Artist')
-    expect(tracks[0].duration).toBe(180)
-    expect(tracks[0].bpm).toBe(125.5)
-    expect(tracks[0].filePath).toBe('/path/to/track.mp3')
-    expect(tracks[0].fileName).toBe('track.mp3')
-    expect(tracks[0].nmlDir).toBe('/:path/:to/:')
-    expect(tracks[0].nmlVolume).toBe('osx')
-  })
+        expect(tracks).toHaveLength(1);
+        expect(tracks[0].title).toBe('Test Track');
+        expect(tracks[0].artist).toBe('Test Artist');
+        expect(tracks[0].duration).toBe(180);
+        expect(tracks[0].bpm).toBe(125.5);
+        expect(tracks[0].filePath).toBe('/path/to/track.mp3');
+        expect(tracks[0].fileName).toBe('track.mp3');
+        expect(tracks[0].nmlDir).toBe('/:path/:to/:');
+        expect(tracks[0].nmlVolume).toBe('osx');
+    });
 
-  it('decodes XML entities: &amp; → &, &apos; → \'', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it("decodes XML entities: &amp; → &, &apos; → '", () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Bob &amp; Alice" ARTIST="It's a &apos;test&apos;">
@@ -37,16 +40,16 @@ describe('parseNmlCollection', () => {
       <INFO PLAYTIME="180"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].title).toBe('Bob & Alice')
-    expect(tracks[0].artist).toBe("It's a 'test'")
-  })
+        expect(tracks[0].title).toBe('Bob & Alice');
+        expect(tracks[0].artist).toBe("It's a 'test'");
+    });
 
-  it('converts ranking to stars: 0→0, 51→1, 255→5', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it('converts ranking to stars: 0→0, 51→1, 255→5', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="3">
     <ENTRY TITLE="Zero Stars">
@@ -62,19 +65,19 @@ describe('parseNmlCollection', () => {
       <INFO PLAYTIME="180" RANKING="255"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].rating).toBe(0)
-    expect(tracks[1].rating).toBe(1)
-    expect(tracks[2].rating).toBe(5)
-  })
+        expect(tracks[0].rating).toBe(0);
+        expect(tracks[1].rating).toBe(1);
+        expect(tracks[2].rating).toBe(5);
+    });
 
-  it('treats MUSICAL_KEY VALUE=0 as unanalyzed (maps to empty string)', () => {
-    // Traktor uses VALUE=0 as a sentinel meaning "key not analysed yet".
-    // MUSICAL_KEY_VALUE_TO_OPEN_KEY[0] intentionally maps to '' rather than '1m'.
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it('treats MUSICAL_KEY VALUE=0 as unanalyzed (maps to empty string)', () => {
+        // Traktor uses VALUE=0 as a sentinel meaning "key not analysed yet".
+        // MUSICAL_KEY_VALUE_TO_OPEN_KEY[0] intentionally maps to '' rather than '1m'.
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Track1">
@@ -83,16 +86,16 @@ describe('parseNmlCollection', () => {
       <MUSICAL_KEY VALUE="0"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].musicalKey).toBe('')
-    expect(tracks[0].musicalKeyValue).toBe(0)
-  })
+        expect(tracks[0].musicalKey).toBe('');
+        expect(tracks[0].musicalKeyValue).toBe(0);
+    });
 
-  it('converts MUSICAL_KEY VALUE (1–23) to Open Key notation', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it('converts MUSICAL_KEY VALUE (1–23) to Open Key notation', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Track2">
@@ -101,16 +104,16 @@ describe('parseNmlCollection', () => {
       <MUSICAL_KEY VALUE="10"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].musicalKey).toBe('4d')
-    expect(tracks[0].musicalKeyValue).toBe(10)
-  })
+        expect(tracks[0].musicalKey).toBe('4d');
+        expect(tracks[0].musicalKeyValue).toBe(10);
+    });
 
-  it('prefers INFO KEY over MUSICAL_KEY VALUE', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it('prefers INFO KEY over MUSICAL_KEY VALUE', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Track">
@@ -119,15 +122,15 @@ describe('parseNmlCollection', () => {
       <MUSICAL_KEY VALUE="10"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].musicalKey).toBe('5m')
-  })
+        expect(tracks[0].musicalKey).toBe('5m');
+    });
 
-  it('skips entries missing LOCATION or FILE', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    it('skips entries missing LOCATION or FILE', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="2">
     <ENTRY TITLE="Missing FILE">
@@ -139,36 +142,38 @@ describe('parseNmlCollection', () => {
       <INFO PLAYTIME="180"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks).toHaveLength(1)
-    expect(tracks[0].title).toBe('Valid Track')
-  })
+        expect(tracks).toHaveLength(1);
+        expect(tracks[0].title).toBe('Valid Track');
+    });
 
-  it('handles empty/malformed XML gracefully', () => {
-    expect(() => parseNmlCollection('')).not.toThrow()
-    expect(parseNmlCollection('')).toEqual([])
+    it('handles empty/malformed XML gracefully', () => {
+        expect(() => parseNmlCollection('')).not.toThrow();
+        expect(parseNmlCollection('')).toEqual([]);
 
-    expect(() => parseNmlCollection('<invalid>')).not.toThrow()
-    expect(parseNmlCollection('<invalid>')).toEqual([])
+        expect(() => parseNmlCollection('<invalid>')).not.toThrow();
+        expect(parseNmlCollection('<invalid>')).toEqual([]);
 
-    expect(() => parseNmlCollection('<NML></NML>')).not.toThrow()
-    expect(parseNmlCollection('<NML></NML>')).toEqual([])
-  })
+        expect(() => parseNmlCollection('<NML></NML>')).not.toThrow();
+        expect(parseNmlCollection('<NML></NML>')).toEqual([]);
+    });
 
-  it('handles UTF-8 BOM', () => {
-    const bomXml = '\uFEFF<?xml version="1.0" encoding="UTF-8"?><NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Test"><LOCATION DIR="/:path/:to/:" FILE="track.mp3" VOLUME="osx" VOLUMEID="osx"/><INFO PLAYTIME="180"/></ENTRY></COLLECTION></NML>'
+    it('handles UTF-8 BOM', () => {
+        const bomXml =
+            '\uFEFF<?xml version="1.0" encoding="UTF-8"?><NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Test"><LOCATION DIR="/:path/:to/:" FILE="track.mp3" VOLUME="osx" VOLUMEID="osx"/><INFO PLAYTIME="180"/></ENTRY></COLLECTION></NML>';
 
-    const tracks = parseNmlCollection(bomXml)
+        const tracks = parseNmlCollection(bomXml);
 
-    expect(tracks).toHaveLength(1)
-    expect(tracks[0].title).toBe('Test')
-  })
+        expect(tracks).toHaveLength(1);
+        expect(tracks[0].title).toBe('Test');
+    });
 
-  it('extracts all metadata fields', () => {
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+    // oxlint-disable-next-line max-statements
+    it('extracts all metadata fields', () => {
+        const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <NML VERSION="19">
   <COLLECTION ENTRIES="1">
     <ENTRY TITLE="Title" ARTIST="Artist">
@@ -180,29 +185,29 @@ describe('parseNmlCollection', () => {
       <MUSICAL_KEY VALUE="12"/>
     </ENTRY>
   </COLLECTION>
-</NML>`
+</NML>`;
 
-    const tracks = parseNmlCollection(xml)
+        const tracks = parseNmlCollection(xml);
 
-    expect(tracks[0].album).toBe('Album')
-    expect(tracks[0].genre).toBe('House')
-    expect(tracks[0].label).toBe('Label')
-    expect(tracks[0].remixer).toBe('Remixer')
-    expect(tracks[0].producer).toBe('Producer')
-    expect(tracks[0].commentRaw).toBe('comment')
-    expect(tracks[0].importDate).toBe('2024-01-01')
-    expect(tracks[0].releaseDate).toBe('2023-01-01')
-    expect(tracks[0].bitrate).toBe(320)
-    expect(tracks[0].filesize).toBe(1000000)
-    expect(tracks[0].playCount).toBe(5)
-    expect(tracks[0].lastPlayed).toBe('2024-01-02')
-    expect(tracks[0].coverArtId).toBe('abc')
-    expect(tracks[0].keyLyrics).toBe('lyrics')
-    expect(tracks[0].flags).toBe(1)
-    expect(tracks[0].color).toBe(16711680)
-    expect(tracks[0].loudnessPeak).toBe(-0.5)
-    expect(tracks[0].loudnessPerceived).toBe(-6)
-    expect(tracks[0].loudnessAnalyzed).toBe(-7)
-    expect(tracks[0].bpmQuality).toBe(100)
-  })
-})
+        expect(tracks[0].album).toBe('Album');
+        expect(tracks[0].genre).toBe('House');
+        expect(tracks[0].label).toBe('Label');
+        expect(tracks[0].remixer).toBe('Remixer');
+        expect(tracks[0].producer).toBe('Producer');
+        expect(tracks[0].commentRaw).toBe('comment');
+        expect(tracks[0].importDate).toBe('2024-01-01');
+        expect(tracks[0].releaseDate).toBe('2023-01-01');
+        expect(tracks[0].bitrate).toBe(320);
+        expect(tracks[0].filesize).toBe(1_000_000);
+        expect(tracks[0].playCount).toBe(5);
+        expect(tracks[0].lastPlayed).toBe('2024-01-02');
+        expect(tracks[0].coverArtId).toBe('abc');
+        expect(tracks[0].keyLyrics).toBe('lyrics');
+        expect(tracks[0].flags).toBe(1);
+        expect(tracks[0].color).toBe(16_711_680);
+        expect(tracks[0].loudnessPeak).toBe(-0.5);
+        expect(tracks[0].loudnessPerceived).toBe(-6);
+        expect(tracks[0].loudnessAnalyzed).toBe(-7);
+        expect(tracks[0].bpmQuality).toBe(100);
+    });
+});

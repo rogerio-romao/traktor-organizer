@@ -1,30 +1,31 @@
 import { XMLParser } from 'fast-xml-parser';
-import type { NmlCollection, NmlEntry } from '../types/nml';
+
+import { nmlLocationToFilePath } from '@/utils/nml-path';
 import {
     MUSICAL_KEY_VALUE_TO_OPEN_KEY,
     rankingToStars,
-} from '../utils/constants';
-import { nmlLocationToFilePath } from '../utils/nml-path';
+} from '@/utils/constants';
+import type { NmlCollection, NmlEntry } from '@/types/nml';
 
 const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: '@_',
     allowBooleanAttributes: true,
+    attributeNamePrefix: '@_',
+    ignoreAttributes: false,
+    isArray: (name): boolean => ['ENTRY', 'CUE_V2', 'NODE'].includes(name),
     parseAttributeValue: false, // Keep everything as strings; we parse manually
-    trimValues: true,
     processEntities: false, // Disable to avoid expansion limit on large collections
-    isArray: (name) => ['ENTRY', 'CUE_V2', 'NODE'].includes(name),
+    trimValues: true,
 });
 
 // Decode the standard XML entities that Traktor uses in track names/metadata
 function decodeEntities(str: string | undefined): string {
     if (!str) return '';
     return str
-        .replace(/&apos;/g, "'")
-        .replace(/&quot;/g, '"')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&amp;/g, '&');
+        .replaceAll('&apos;', "'")
+        .replaceAll('&quot;', '"')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&amp;', '&');
 }
 
 // The shape of a parsed track ready for database insertion
@@ -77,10 +78,13 @@ export interface ParsedTrack {
  * Returns an array of ParsedTrack objects ready for database insertion.
  * Invalid entries (missing LOCATION or file path) are skipped.
  */
+// oxlint-disable-next-line complexity, max-statements, max-lines-per-function
 export function parseNmlCollection(xmlContent: string): ParsedTrack[] {
     // Strip UTF-8 BOM if present
     const xml =
-        xmlContent.charCodeAt(0) === 0xfeff ? xmlContent.slice(1) : xmlContent;
+        xmlContent.codePointAt(0) === 0xfe_ff
+            ? xmlContent.slice(1)
+            : xmlContent;
 
     const raw = parser.parse(xml) as NmlCollection;
 
@@ -104,69 +108,81 @@ export function parseNmlCollection(xmlContent: string): ParsedTrack[] {
         const loudness = entry.LOUDNESS ?? {};
         const musicalKeyRaw = entry.MUSICAL_KEY?.['@_VALUE'];
         const musicalKeyValue =
-            musicalKeyRaw != null ? parseInt(musicalKeyRaw, 10) : null;
+            musicalKeyRaw === undefined
+                ? null
+                : Number.parseInt(musicalKeyRaw, 10);
 
         // Prefer the text key from INFO (already in Open Key format like "10m")
         // Fall back to converting the numeric MUSICAL_KEY value
         let musicalKey = info['@_KEY'] ?? '';
-        if (!musicalKey && musicalKeyValue != null) {
+        if (musicalKey) {
+            // keep key from INFO
+        } else if (musicalKeyValue !== null) {
             musicalKey = MUSICAL_KEY_VALUE_TO_OPEN_KEY[musicalKeyValue] ?? '';
         }
 
-        const ranking = parseInt(info['@_RANKING'] ?? '0', 10);
+        const ranking = Number.parseInt(info['@_RANKING'] ?? '0', 10);
 
         tracks.push({
-            title: decodeEntities(entry['@_TITLE']),
-            artist: decodeEntities(entry['@_ARTIST']),
             album: decodeEntities(entry.ALBUM?.['@_TITLE']),
-            genre: decodeEntities(info['@_GENRE']),
-            bpm: tempo['@_BPM'] ? parseFloat(tempo['@_BPM']) : null,
-            musicalKey,
-            musicalKeyValue: isNaN(musicalKeyValue ?? NaN)
-                ? null
-                : musicalKeyValue,
-            duration: parseInt(info['@_PLAYTIME'] ?? '0', 10),
-            durationFloat: info['@_PLAYTIME_FLOAT']
-                ? parseFloat(info['@_PLAYTIME_FLOAT'])
+            artist: decodeEntities(entry['@_ARTIST']),
+            audioId: entry['@_AUDIO_ID'] ?? '',
+            bitrate: info['@_BITRATE']
+                ? Number.parseInt(info['@_BITRATE'], 10)
                 : null,
-            rating: isNaN(ranking) ? 0 : rankingToStars(ranking),
-            label: decodeEntities(info['@_LABEL']),
-            remixer: decodeEntities(info['@_REMIXER']),
-            producer: decodeEntities(info['@_PRODUCER']),
-            releaseDate: info['@_RELEASE_DATE'] ?? '',
-            mix: decodeEntities(info['@_MIX']),
+            bpm: tempo['@_BPM'] ? Number.parseFloat(tempo['@_BPM']) : null,
+            bpmQuality: tempo['@_BPM_QUALITY']
+                ? Number.parseFloat(tempo['@_BPM_QUALITY'])
+                : null,
             catalogNo: info['@_CATALOG_NO'] ?? '',
-            bitrate: info['@_BITRATE'] ? parseInt(info['@_BITRATE'], 10) : null,
-            filesize: info['@_FILESIZE']
-                ? parseInt(info['@_FILESIZE'], 10)
+            color: info['@_COLOR']
+                ? Number.parseInt(info['@_COLOR'], 10)
                 : null,
-            playCount: parseInt(info['@_PLAYCOUNT'] ?? '0', 10),
+            commentRaw: decodeEntities(info['@_COMMENT']),
+            coverArtId: info['@_COVERARTID'] ?? '',
+            duration: Number.parseInt(info['@_PLAYTIME'] ?? '0', 10),
+            durationFloat: info['@_PLAYTIME_FLOAT']
+                ? Number.parseFloat(info['@_PLAYTIME_FLOAT'])
+                : null,
+            fileName: loc['@_FILE'],
+            filePath,
+            filesize: info['@_FILESIZE']
+                ? Number.parseInt(info['@_FILESIZE'], 10)
+                : null,
+            flags: info['@_FLAGS']
+                ? Number.parseInt(info['@_FLAGS'], 10)
+                : null,
+            genre: decodeEntities(info['@_GENRE']),
+            importDate: info['@_IMPORT_DATE'] ?? '',
+            keyLyrics: info['@_KEY_LYRICS'] ?? '',
+            label: decodeEntities(info['@_LABEL']),
             lastPlayed: info['@_LAST_PLAYED'] ?? '',
-            color: info['@_COLOR'] ? parseInt(info['@_COLOR'], 10) : null,
+            loudnessAnalyzed: loudness['@_ANALYZED_DB']
+                ? Number.parseFloat(loudness['@_ANALYZED_DB'])
+                : null,
             loudnessPeak: loudness['@_PEAK_DB']
-                ? parseFloat(loudness['@_PEAK_DB'])
+                ? Number.parseFloat(loudness['@_PEAK_DB'])
                 : null,
             loudnessPerceived: loudness['@_PERCEIVED_DB']
-                ? parseFloat(loudness['@_PERCEIVED_DB'])
+                ? Number.parseFloat(loudness['@_PERCEIVED_DB'])
                 : null,
-            loudnessAnalyzed: loudness['@_ANALYZED_DB']
-                ? parseFloat(loudness['@_ANALYZED_DB'])
-                : null,
-            bpmQuality: tempo['@_BPM_QUALITY']
-                ? parseFloat(tempo['@_BPM_QUALITY'])
-                : null,
-            keyLyrics: info['@_KEY_LYRICS'] ?? '',
-            flags: info['@_FLAGS'] ? parseInt(info['@_FLAGS'], 10) : null,
-            filePath,
-            fileName: loc['@_FILE'],
+            mix: decodeEntities(info['@_MIX']),
+            musicalKey,
+            musicalKeyValue: Number.isNaN(musicalKeyValue ?? Number.NaN)
+                ? null
+                : musicalKeyValue,
             nmlDir: loc['@_DIR'],
             nmlFile: loc['@_FILE'],
             nmlVolume: loc['@_VOLUME'] ?? '',
             nmlVolumeId: loc['@_VOLUMEID'] ?? '',
-            coverArtId: info['@_COVERARTID'] ?? '',
-            commentRaw: decodeEntities(info['@_COMMENT']),
-            importDate: info['@_IMPORT_DATE'] ?? '',
-            audioId: entry['@_AUDIO_ID'] ?? '',
+            playCount: info['@_PLAYCOUNT']
+                ? Number.parseInt(info['@_PLAYCOUNT'], 10)
+                : 0,
+            producer: decodeEntities(info['@_PRODUCER']),
+            rating: Number.isNaN(ranking) ? 0 : rankingToStars(ranking),
+            releaseDate: info['@_RELEASE_DATE'] ?? '',
+            remixer: decodeEntities(info['@_REMIXER']),
+            title: decodeEntities(entry['@_TITLE']),
         });
     }
 

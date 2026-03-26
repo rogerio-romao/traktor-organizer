@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getDb } from '../services/database';
+
+import { getDb } from '@/services/database';
 
 interface TagWithCount {
     id: number;
@@ -11,7 +12,7 @@ interface TagWithCount {
 export const useTagsStore = defineStore('tags', () => {
     const allTags = ref<TagWithCount[]>([]);
 
-    async function loadAllTags() {
+    async function loadAllTags(): Promise<void> {
         const db = await getDb();
         allTags.value = await db.select<TagWithCount[]>(
             `SELECT t.id, t.name, COUNT(tt.track_id) as count

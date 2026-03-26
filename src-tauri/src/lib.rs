@@ -13,7 +13,9 @@ fn extract_cover_art(path: String) -> String {
         return String::new();
     };
 
-    let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
+    let tag = tagged_file
+        .primary_tag()
+        .or_else(|| tagged_file.first_tag());
 
     tag.and_then(|t| t.pictures().first())
         .map(|pic| {

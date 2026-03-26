@@ -1,15 +1,20 @@
-import { ref } from 'vue'
+import { ref } from 'vue';
 
-const visible = ref(false)
-const trackId = ref<number>(0)
+const visible = ref(false);
+const trackId = ref<number>(0);
 
-export function useTagEditor() {
-  function open(id: number) {
-    trackId.value = id
-    visible.value = true
-  }
-  function close() {
-    visible.value = false
-  }
-  return { visible, trackId, open, close }
+export function useTagEditor(): {
+    open: (id: number) => void;
+    close: () => void;
+    trackId: typeof trackId;
+    visible: typeof visible;
+} {
+    function open(id: number): void {
+        trackId.value = id;
+        visible.value = true;
+    }
+    function close(): void {
+        visible.value = false;
+    }
+    return { close, open, trackId, visible };
 }
