@@ -1,6 +1,6 @@
 /** Normalize a single tag: lowercase, strip disallowed characters. */
 export function normalizeTag(tag: string): string {
-  return tag.toLowerCase().replace(/[^a-z0-9@.-]/g, '')
+    return tag.toLowerCase().replaceAll(/[^a-z0-9@.-]/g, '');
 }
 
 /**
@@ -14,14 +14,19 @@ export function normalizeTag(tag: string): string {
  * - Deduplicate
  * - Drop empty strings
  */
-export function splitCommentIntoTags(comment: string, blocklist: Set<string> = new Set()): string[] {
-  if (!comment?.trim()) return []
+export function splitCommentIntoTags(
+    comment: string,
+    blocklist: Set<string> = new Set<string>(),
+): string[] {
+    if (!comment?.trim()) return [];
 
-  return [...new Set(
-    comment
-      .trim()
-      .split(/\s+/)
-      .map(t => normalizeTag(t))
-      .filter(t => t.length > 0 && !blocklist.has(t)),
-  )]
+    return [
+        ...new Set(
+            comment
+                .trim()
+                .split(/\s+/)
+                .map((t) => normalizeTag(t))
+                .filter((t) => t.length > 0 && !blocklist.has(t)),
+        ),
+    ];
 }

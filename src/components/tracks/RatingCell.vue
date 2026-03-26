@@ -1,16 +1,19 @@
 <script setup lang="ts">
     import { ref } from 'vue';
-    import { useTracksStore } from '../../stores/tracks';
+    import { useTracksStore } from '@/stores/tracks';
 
-    const props = defineProps<{ value: number; trackId: number }>();
+    const { value, trackId } = defineProps<{
+        value: number;
+        trackId: number;
+    }>();
     const tracksStore = useTracksStore();
     const hovered = ref(0);
 
-    async function setRating(star: number) {
+    async function setRating(star: number): Promise<void> {
         // Only clear (set to 0) when clicking 1★ that is already the current rating
-        const newRating = star === 1 && props.value === 1 ? 0 : star;
-        if (newRating === props.value) return;
-        await tracksStore.updateRating(props.trackId, newRating);
+        const newRating = star === 1 && value === 1 ? 0 : star;
+        if (newRating === value) return;
+        await tracksStore.updateRating(trackId, newRating);
     }
 </script>
 

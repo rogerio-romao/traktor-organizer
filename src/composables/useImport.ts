@@ -1,131 +1,56 @@
-import { ref } from 'vue'
-import { open } from '@tauri-apps/plugin-dialog'
-import { readTextFile, exists } from '@tauri-apps/plugin-fs'
-import { documentDir, join } from '@tauri-apps/api/path'
-import { parseNmlCollection, type ParsedTrack } from '../services/nml-parser'
-import { splitCommentIntoTags } from '../services/tag-processor'
-import { getDb, getSetting, setSetting, getTagBlocklist } from '../services/database'
+import { open } from '@tauri-apps/plugin-dialog';
+import { ref } from 'vue';
+import { documentDir, join } from '@tauri-apps/api/path';
+import { exists, readTextFile } from '@tauri-apps/plugin-fs';
 
-export interface ImportStats {
-  total: number
-  inserted: number
-  updated: number
-  skipped: number
-}
+import { parseNmlCollection } from '@/services/nml-parser';
+import { splitCommentIntoTags } from '@/services/tag-processor';
+import {
+    getDb,
+    getSetting,
+    getTagBlocklist,
+    setSetting,
+} from '@/services/database';
 
-export function useImport() {
-  const isImporting = ref(false)
-  const progress = ref(0)       // 0–100
-  const progressLabel = ref('')
-  const error = ref<string | null>(null)
-
-  async function resolveDefaultImportDir(): Promise<string | undefined> {
-    // 1. Use last saved path if available
-    const lastDir = await getSetting('last_import_dir')
-    if (lastDir) return lastDir
-
-    // 2. Try to find Traktor's default folder under Documents
-    try {
-      const docs = await documentDir()
-      const niPath = await join(docs, 'Native Instruments')
-      if (await exists(niPath)) return niPath
-    } catch {
-      // ignore — will fall back to undefined (OS default)
-    }
-
-    return undefined
-  }
-
-  async function pickAndImport(): Promise<ImportStats | null> {
-    error.value = null
-
-    const defaultPath = await resolveDefaultImportDir()
-
-    const selected = await open({
-      title: 'Select Traktor collection.nml',
-      filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
-      defaultPath,
-    })
-
-    if (!selected) return null  // User cancelled
-
-    // Save the directory for next time
-    const dir = selected.substring(0, selected.lastIndexOf('/'))
-    await setSetting('last_import_dir', dir)
-
-    return runImport(selected)
-  }
-
-  async function runImport(filePath: string): Promise<ImportStats> {
-    isImporting.value = true
-    progress.value = 0
-    progressLabel.value = 'Reading file…'
-    error.value = null
-
-    const stats: ImportStats = { total: 0, inserted: 0, updated: 0, skipped: 0 }
-
-    try {
-      const xml = await readTextFile(filePath)
-
-      progressLabel.value = 'Parsing collection…'
-      const tracks = parseNmlCollection(xml)
-      stats.total = tracks.length
-
-      progressLabel.value = `Importing ${stats.total} tracks…`
-      const tagBlocklist = await getTagBlocklist()
-      await insertTracks(tracks, stats, tagBlocklist, (done) => {
-        progress.value = Math.round((done / stats.total) * 100)
-        progressLabel.value = `Importing track ${done} of ${stats.total}…`
-      })
-
-      progressLabel.value = `Done — ${stats.inserted} new, ${stats.updated} updated`
-    } catch (e) {
-      // Log the real error for debugging; show a generic message to the user.
-      // TODO: add error reporting (e.g. Sentry) to capture these in production.
-      console.error('[Import error]', e)
-      error.value = 'Something went wrong during the import. Please try again.'
-    } finally {
-      isImporting.value = false
-    }
-
-    return stats
-  }
-
-  return { isImporting, progress, progressLabel, error, pickAndImport }
-}
+import type { ParsedTrack } from '@/services/nml-parser';
 
 // ─── DB insertion ────────────────────────────────────────────────────────────
 
 async function insertTracks(
-  tracks: ParsedTrack[],
-  stats: ImportStats,
-  tagBlocklist: Set<string>,
-  onProgress: (done: number) => void,
+    tracks: ParsedTrack[],
+    stats: ImportStats,
+    tagBlocklist: Set<string>,
+    onProgress: (done: number) => void,
 ): Promise<void> {
-  const db = await getDb()
+    const db = await getDb();
 
-  for (let i = 0; i < tracks.length; i++) {
-    await upsertTrack(db, tracks[i], stats, tagBlocklist)
-    onProgress(i + 1)
-  }
+    let done = 0;
+    await Promise.all(
+        tracks.map(async (track) => {
+            await upsertTrack(db, track, stats, tagBlocklist);
+            done += 1;
+            onProgress(done);
+        }),
+    );
 }
 
+// oxlint-disable-next-line max-lines-per-function, max-statements
 async function upsertTrack(
-  db: Awaited<ReturnType<typeof getDb>>,
-  track: ParsedTrack,
-  stats: ImportStats,
-  tagBlocklist: Set<string>,
+    db: Awaited<ReturnType<typeof getDb>>,
+    track: ParsedTrack,
+    stats: ImportStats,
+    tagBlocklist: Set<string>,
 ): Promise<void> {
-  // Check if track already exists (match by file path)
-  const existing = await db.select<{ id: number }[]>(
-    'SELECT id FROM tracks WHERE file_path = $1',
-    [track.filePath],
-  )
+    // Check if track already exists (match by file path)
+    const existing = await db.select<{ id: number }[]>(
+        'SELECT id FROM tracks WHERE file_path = $1',
+        [track.filePath],
+    );
 
-  if (existing.length > 0) {
-    // Existing track: update display-only fields, preserve editable fields (genre, rating, tags)
-    const result = await db.execute(
-      `UPDATE tracks SET
+    if (existing.length > 0) {
+        // Existing track: update display-only fields, preserve editable fields (genre, rating, tags)
+        const result = await db.execute(
+            `UPDATE tracks SET
         title = $1, artist = $2, album = $3,
         bpm = $4, musical_key = $5, musical_key_value = $6,
         duration = $7, duration_float = $8,
@@ -148,31 +73,51 @@ async function upsertTrack(
           bpm_quality IS NOT $23 OR key_lyrics IS NOT $24 OR flags IS NOT $25 OR
           cover_art_id IS NOT $26 OR comment_raw IS NOT $27 OR import_date IS NOT $28 OR audio_id IS NOT $29
         )`,
-      [
-        track.title, track.artist, track.album,
-        track.bpm, track.musicalKey, track.musicalKeyValue,
-        track.duration, track.durationFloat,
-        track.label, track.remixer, track.producer, track.releaseDate,
-        track.mix, track.catalogNo, track.bitrate, track.filesize,
-        track.playCount, track.lastPlayed, track.color,
-        track.loudnessPeak, track.loudnessPerceived, track.loudnessAnalyzed,
-        track.bpmQuality, track.keyLyrics, track.flags,
-        track.coverArtId, track.commentRaw, track.importDate, track.audioId,
-        track.filePath,
-      ],
-    )
-    // Re-sync tags from NML on update too (additive only — INSERT OR IGNORE won't
-    // duplicate existing tags or remove ones added manually in the app)
-    await insertTags(db, existing[0].id, track.commentRaw, tagBlocklist)
-    if (result.rowsAffected > 0) {
-      stats.updated++
+            [
+                track.title,
+                track.artist,
+                track.album,
+                track.bpm,
+                track.musicalKey,
+                track.musicalKeyValue,
+                track.duration,
+                track.durationFloat,
+                track.label,
+                track.remixer,
+                track.producer,
+                track.releaseDate,
+                track.mix,
+                track.catalogNo,
+                track.bitrate,
+                track.filesize,
+                track.playCount,
+                track.lastPlayed,
+                track.color,
+                track.loudnessPeak,
+                track.loudnessPerceived,
+                track.loudnessAnalyzed,
+                track.bpmQuality,
+                track.keyLyrics,
+                track.flags,
+                track.coverArtId,
+                track.commentRaw,
+                track.importDate,
+                track.audioId,
+                track.filePath,
+            ],
+        );
+        // Re-sync tags from NML on update too (additive only — INSERT OR IGNORE won't
+        // duplicate existing tags or remove ones added manually in the app)
+        await insertTags(db, existing[0].id, track.commentRaw, tagBlocklist);
+        if (result.rowsAffected > 0) {
+            stats.updated += 1;
+        } else {
+            stats.skipped += 1;
+        }
     } else {
-      stats.skipped++
-    }
-  } else {
-    // New track: full insert including genre and rating from NML
-    const result = await db.execute(
-      `INSERT INTO tracks (
+        // New track: full insert including genre and rating from NML
+        const result = await db.execute(
+            `INSERT INTO tracks (
         title, artist, album, genre,
         bpm, musical_key, musical_key_value,
         duration, duration_float, rating,
@@ -188,40 +133,167 @@ async function upsertTrack(
         $19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,
         $35,$36,datetime('now'),$37
       )`,
-      [
-        track.title, track.artist, track.album, track.genre,
-        track.bpm, track.musicalKey, track.musicalKeyValue,
-        track.duration, track.durationFloat, track.rating,
-        track.label, track.remixer, track.producer, track.releaseDate,
-        track.mix, track.catalogNo, track.bitrate, track.filesize,
-        track.playCount, track.lastPlayed, track.color,
-        track.loudnessPeak, track.loudnessPerceived, track.loudnessAnalyzed,
-        track.bpmQuality, track.keyLyrics, track.flags,
-        track.filePath, track.fileName, track.nmlDir, track.nmlFile,
-        track.nmlVolume, track.nmlVolumeId,
-        track.coverArtId, track.commentRaw, track.importDate, track.audioId,
-      ],
-    )
+            [
+                track.title,
+                track.artist,
+                track.album,
+                track.genre,
+                track.bpm,
+                track.musicalKey,
+                track.musicalKeyValue,
+                track.duration,
+                track.durationFloat,
+                track.rating,
+                track.label,
+                track.remixer,
+                track.producer,
+                track.releaseDate,
+                track.mix,
+                track.catalogNo,
+                track.bitrate,
+                track.filesize,
+                track.playCount,
+                track.lastPlayed,
+                track.color,
+                track.loudnessPeak,
+                track.loudnessPerceived,
+                track.loudnessAnalyzed,
+                track.bpmQuality,
+                track.keyLyrics,
+                track.flags,
+                track.filePath,
+                track.fileName,
+                track.nmlDir,
+                track.nmlFile,
+                track.nmlVolume,
+                track.nmlVolumeId,
+                track.coverArtId,
+                track.commentRaw,
+                track.importDate,
+                track.audioId,
+            ],
+        );
 
-    const trackId = result.lastInsertId ?? 0
-    if (trackId) await insertTags(db, trackId, track.commentRaw, tagBlocklist)
-    stats.inserted++
-  }
+        const trackId = result.lastInsertId ?? 0;
+        if (trackId)
+            await insertTags(db, trackId, track.commentRaw, tagBlocklist);
+        stats.inserted += 1;
+    }
 }
 
 async function insertTags(
-  db: Awaited<ReturnType<typeof getDb>>,
-  trackId: number,
-  commentRaw: string,
-  tagBlocklist: Set<string>,
+    db: Awaited<ReturnType<typeof getDb>>,
+    trackId: number,
+    commentRaw: string,
+    tagBlocklist: Set<string>,
 ): Promise<void> {
-  const tags = splitCommentIntoTags(commentRaw, tagBlocklist)
-  for (const name of tags) {
-    await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [name])
-    await db.execute(
-      `INSERT OR IGNORE INTO track_tags (track_id, tag_id)
+    const tags = splitCommentIntoTags(commentRaw, tagBlocklist);
+    await Promise.all(
+        tags.map(async (name) => {
+            await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [
+                name,
+            ]);
+            await db.execute(
+                `INSERT OR IGNORE INTO track_tags (track_id, tag_id)
        SELECT $1, id FROM tags WHERE name = $2`,
-      [trackId, name],
-    )
-  }
+                [trackId, name],
+            );
+        }),
+    );
+}
+
+export interface ImportStats {
+    total: number;
+    inserted: number;
+    updated: number;
+    skipped: number;
+}
+
+export function useImport(): {
+    isImporting: typeof isImporting;
+    progress: typeof progress;
+    progressLabel: typeof progressLabel;
+    error: typeof error;
+    pickAndImport: () => Promise<ImportStats | null>;
+} {
+    const isImporting = ref(false);
+    const progress = ref(0); // 0–100
+    const progressLabel = ref('');
+    const error = ref<string | null>(null);
+
+    async function resolveDefaultImportDir(): Promise<string | undefined> {
+        // 1. Use last saved path if available
+        const lastDir = await getSetting('last_import_dir');
+        if (lastDir) return lastDir;
+
+        // 2. Try to find Traktor's default folder under Documents
+        try {
+            const docs = await documentDir();
+            const niPath = await join(docs, 'Native Instruments');
+            if (await exists(niPath)) return niPath;
+        } catch {
+            // ignore — will fall back to undefined (OS default)
+        }
+    }
+
+    async function pickAndImport(): Promise<ImportStats | null> {
+        error.value = null;
+
+        const defaultPath = await resolveDefaultImportDir();
+
+        const selected = await open({
+            defaultPath,
+            filters: [{ extensions: ['nml'], name: 'Traktor Collection' }],
+            title: 'Select Traktor collection.nml',
+        });
+
+        if (!selected) return null; // User cancelled
+
+        // Save the directory for next time
+        const dir = selected.slice(0, selected.lastIndexOf('/'));
+        await setSetting('last_import_dir', dir);
+
+        return runImport(selected);
+    }
+
+    // oxlint-disable-next-line max-statements
+    async function runImport(filePath: string): Promise<ImportStats> {
+        isImporting.value = true;
+        progress.value = 0;
+        progressLabel.value = 'Reading file…';
+        error.value = null;
+
+        const stats: ImportStats = {
+            inserted: 0,
+            skipped: 0,
+            total: 0,
+            updated: 0,
+        };
+
+        try {
+            const xml = await readTextFile(filePath);
+
+            progressLabel.value = 'Parsing collection…';
+            const tracks = parseNmlCollection(xml);
+            stats.total = tracks.length;
+
+            progressLabel.value = `Importing ${stats.total} tracks…`;
+            const tagBlocklist = await getTagBlocklist();
+            await insertTracks(tracks, stats, tagBlocklist, (done) => {
+                progress.value = Math.round((done / stats.total) * 100);
+                progressLabel.value = `Importing track ${done} of ${stats.total}…`;
+            });
+
+            progressLabel.value = `Done — ${stats.inserted} new, ${stats.updated} updated`;
+        } catch {
+            error.value =
+                'Something went wrong during the import. Please try again.';
+        } finally {
+            isImporting.value = false;
+        }
+
+        return stats;
+    }
+
+    return { error, isImporting, pickAndImport, progress, progressLabel };
 }

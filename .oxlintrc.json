@@ -1,0 +1,127 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["eslint", "import", "oxc", "typescript", "unicorn", "vue"],
+    "categories": {
+        "correctness": "error",
+        "nursery": "warn",
+        "pedantic": "warn",
+        "perf": "warn",
+        "restriction": "warn",
+        "style": "warn",
+        "suspicious": "warn"
+    },
+    "rules": {
+        "eslint/capitalized-comments": "off",
+        "eslint/curly": "off",
+        "eslint/func-style": "off",
+        "eslint/id-length": "off",
+        "eslint/init-declarations": "off",
+        "eslint/max-lines-per-function": ["warn", { "max": 100 }],
+        "eslint/max-params": ["warn", { "max": 4 }],
+        "eslint/no-continue": "off",
+        "eslint/no-duplicate-imports": [
+            "error",
+            { "allowSeparateTypeImports": true }
+        ],
+        "eslint/no-inline-comments": "off",
+        "eslint/no-magic-numbers": "off",
+        "eslint/no-plusplus": ["warn", { "allowForLoopAfterthoughts": true }],
+        "eslint/no-ternary": "off",
+        "eslint/no-undefined": "off",
+        "eslint/no-use-before-define": [
+            "error",
+            { "functions": false, "classes": true, "variables": true }
+        ],
+        "eslint/prefer-destructuring": [
+            "warn",
+            {
+                "VariableDeclarator": {
+                    "array": false,
+                    "object": true
+                },
+                "AssignmentExpression": {
+                    "array": false,
+                    "object": true
+                }
+            },
+            {
+                "enforceForRenamedProperties": false
+            }
+        ],
+        "eslint/sort-imports": [
+            "warn",
+            {
+                "ignoreCase": true,
+                "allowSeparatedGroups": true,
+                "memberSyntaxSortOrder": ["none", "all", "single", "multiple"]
+            }
+        ],
+        "import/group-exports": "off",
+        "import/max-dependencies": [
+            "warn",
+            {
+                "max": 15
+            }
+        ],
+        "import/no-named-export": "off",
+        "import/prefer-default-export": "off",
+        "import/unambiguous": "off",
+        "oxc/no-async-await": "off",
+        "oxc/no-optional-chaining": "off",
+        "oxc/no-rest-spread-properties": "off",
+        "unicorn/filename-case": "off",
+        "unicorn/no-null": "off",
+        "unicorn/number-literal-case": "off",
+        "vue/max-props": ["warn", { "maxProps": 3 }]
+    },
+    "overrides": [
+        {
+            "files": ["src/__tests__/**/*.ts", "src/__tests__/**/*.vue"],
+            "plugins": [
+                "eslint",
+                "import",
+                "oxc",
+                "typescript",
+                "unicorn",
+                "vitest",
+                "vue"
+            ],
+            "rules": {
+                "eslint/no-empty-function": "off"
+            }
+        }
+    ],
+    "settings": {
+        "jsx-a11y": {
+            "polymorphicPropName": "as",
+            "components": {},
+            "attributes": {}
+        },
+        "jsdoc": {
+            "ignorePrivate": false,
+            "ignoreInternal": false,
+            "ignoreReplacesDocs": true,
+            "overrideReplacesDocs": true,
+            "augmentsExtendsReplacesDocs": false,
+            "implementsReplacesDocs": false,
+            "exemptDestructuredRootsFromChecks": false,
+            "tagNamePreference": {}
+        },
+        "vitest": {
+            "typecheck": false
+        }
+    },
+    "env": {
+        "browser": true,
+        "node": true,
+        "vitest": true,
+        "builtin": true
+    },
+    "globals": {
+        "defineProps": "readonly",
+        "defineEmits": "readonly",
+        "defineExpose": "readonly",
+        "withDefaults": "readonly"
+    },
+    "ignorePatterns": []
+}

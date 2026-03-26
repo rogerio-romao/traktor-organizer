@@ -2,6 +2,7 @@
 type KeyDisplayFormat = 'open_key' | 'camelot' | 'standard';
 
 // Map from Open Key notation → Camelot notation
+// oxlint-disable-next-line sort-keys
 const OPEN_KEY_TO_CAMELOT: Record<string, string> = {
     '1d': '8B',
     '2d': '9B',
@@ -30,6 +31,7 @@ const OPEN_KEY_TO_CAMELOT: Record<string, string> = {
 };
 
 // Map from Open Key notation → standard musical notation
+// oxlint-disable-next-line sort-keys
 const OPEN_KEY_TO_STANDARD: Record<string, string> = {
     '1d': 'C',
     '2d': 'G',
@@ -59,6 +61,7 @@ const OPEN_KEY_TO_STANDARD: Record<string, string> = {
 
 // Map from Traktor's raw MUSICAL_KEY VALUE (0–23) → Open Key notation
 // Value 0 means unanalyzed/unknown
+// oxlint-disable-next-line sort-keys
 export const MUSICAL_KEY_VALUE_TO_OPEN_KEY: Record<number, string> = {
     0: '',
     1: '1d',
