@@ -1,16 +1,11 @@
-import { open } from '@tauri-apps/plugin-dialog';
-import { ref } from 'vue';
 import { documentDir, join } from '@tauri-apps/api/path';
+import { open } from '@tauri-apps/plugin-dialog';
 import { exists, readTextFile } from '@tauri-apps/plugin-fs';
+import { ref } from 'vue';
 
+import { getDb, getSetting, getTagBlocklist, setSetting } from '@/services/database';
 import { parseNmlCollection } from '@/services/nml-parser';
 import { splitCommentIntoTags } from '@/services/tag-processor';
-import {
-    getDb,
-    getSetting,
-    getTagBlocklist,
-    setSetting,
-} from '@/services/database';
 
 import type { ParsedTrack } from '@/services/nml-parser';
 
@@ -175,8 +170,7 @@ async function upsertTrack(
         );
 
         const trackId = result.lastInsertId ?? 0;
-        if (trackId)
-            await insertTags(db, trackId, track.commentRaw, tagBlocklist);
+        if (trackId) await insertTags(db, trackId, track.commentRaw, tagBlocklist);
         stats.inserted += 1;
     }
 }
@@ -190,9 +184,7 @@ async function insertTags(
     const tags = splitCommentIntoTags(commentRaw, tagBlocklist);
     await Promise.all(
         tags.map(async (name) => {
-            await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [
-                name,
-            ]);
+            await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [name]);
             await db.execute(
                 `INSERT OR IGNORE INTO track_tags (track_id, tag_id)
        SELECT $1, id FROM tags WHERE name = $2`,
@@ -286,8 +278,7 @@ export function useImport(): {
 
             progressLabel.value = `Done — ${stats.inserted} new, ${stats.updated} updated`;
         } catch {
-            error.value =
-                'Something went wrong during the import. Please try again.';
+            error.value = 'Something went wrong during the import. Please try again.';
         } finally {
             isImporting.value = false;
         }

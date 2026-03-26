@@ -1,25 +1,46 @@
 @import './variables.css';
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-html, body, #app {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  background: var(--bg-primary);
-  color: var(--text-primary);
+html,
+body,
+#app {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Scrollbars */
-::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--scrollbar-track); }
-::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #666; }
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
 
 /* Shared button resets */
-button { font-family: inherit; font-size: inherit; cursor: pointer; }
-input  { font-family: inherit; font-size: inherit; }
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+}
+input {
+    font-family: inherit;
+    font-size: inherit;
+}

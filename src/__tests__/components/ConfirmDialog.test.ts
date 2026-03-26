@@ -1,11 +1,10 @@
-import { nextTick } from 'vue';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/vue';
-
-import { useConfirm } from '@/composables/useConfirm';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { nextTick } from 'vue';
 
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
 beforeEach(() => {
     const { visible, respond } = useConfirm();
@@ -41,9 +40,7 @@ describe('ConfirmDialog', () => {
         const { confirm } = useConfirm();
         confirm('Are you sure?');
         await nextTick();
-        expect(
-            screen.getByRole('dialog', { name: 'Are you sure?' }),
-        ).toBeTruthy();
+        expect(screen.getByRole('dialog', { name: 'Are you sure?' })).toBeTruthy();
     });
 
     it('dialog disappears after responding', async () => {

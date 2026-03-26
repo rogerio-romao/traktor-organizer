@@ -1,39 +1,39 @@
 <script setup lang="ts">
-    import { onUnmounted, watch } from 'vue';
+import { onUnmounted, watch } from 'vue';
 
-    import { useContextMenu } from '@/composables/useContextMenu';
+import { useContextMenu } from '@/composables/useContextMenu';
 
-    const { visible, position, items, hide } = useContextMenu();
+const { visible, position, items, hide } = useContextMenu();
 
-    const allItems = (): typeof items.value => items.value;
+const allItems = (): typeof items.value => items.value;
 
-    function runAction(action: () => void): void {
-        hide();
-        action();
-    }
+function runAction(action: () => void): void {
+    hide();
+    action();
+}
 
-    function onMousedown(): void {
-        hide();
-    }
+function onMousedown(): void {
+    hide();
+}
 
-    function onKeydown(e: KeyboardEvent): void {
-        if (e.key === 'Escape') hide();
-    }
+function onKeydown(e: KeyboardEvent): void {
+    if (e.key === 'Escape') hide();
+}
 
-    watch(visible, (val) => {
-        if (val) {
-            document.addEventListener('mousedown', onMousedown);
-            document.addEventListener('keydown', onKeydown);
-        } else {
-            document.removeEventListener('mousedown', onMousedown);
-            document.removeEventListener('keydown', onKeydown);
-        }
-    });
-
-    onUnmounted(() => {
+watch(visible, (val) => {
+    if (val) {
+        document.addEventListener('mousedown', onMousedown);
+        document.addEventListener('keydown', onKeydown);
+    } else {
         document.removeEventListener('mousedown', onMousedown);
         document.removeEventListener('keydown', onKeydown);
-    });
+    }
+});
+
+onUnmounted(() => {
+    document.removeEventListener('mousedown', onMousedown);
+    document.removeEventListener('keydown', onKeydown);
+});
 </script>
 
 <template>
@@ -55,37 +55,37 @@
 </template>
 
 <style scoped>
-    .context-menu {
-        position: fixed;
-        z-index: 1000;
-        min-width: 190px;
-        background: var(--bg-secondary);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 4px 0;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    min-width: 190px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 0;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
 
-    .context-item {
-        display: block;
-        width: 100%;
-        padding: 7px 14px;
-        text-align: left;
-        background: none;
-        border: none;
-        color: var(--text-primary);
-        font-size: 12px;
-        cursor: pointer;
-        white-space: nowrap;
-    }
-    .context-item:hover {
-        background: var(--bg-hover);
-        color: var(--text-primary);
-    }
+.context-item {
+    display: block;
+    width: 100%;
+    padding: 7px 14px;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.context-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
 
-    .context-divider {
-        height: 1px;
-        background: var(--border);
-        margin: 4px 0;
-    }
+.context-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+}
 </style>

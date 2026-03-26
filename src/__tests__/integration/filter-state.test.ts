@@ -1,12 +1,13 @@
 // oxlint-disable max-lines
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createDbState } from './helpers/db-stub';
-import type { TrackRow } from '@/types/track';
 import { useTracksStore } from '@/stores/tracks';
 
+import { createDbState } from './helpers/db-stub';
+
+import type { TrackRow } from '@/types/track';
 import type { DbState } from './helpers/db-stub';
 
 // ── Test setup ───────────────────────────────────────────────────────────────
@@ -88,9 +89,7 @@ describe('tag filters', () => {
         store.activeTagFilters = ['techno'];
 
         expect(store.filteredTracks).toHaveLength(2);
-        expect(store.filteredTracks.map((t) => t.id)).toEqual(
-            expect.arrayContaining([1, 3]),
-        );
+        expect(store.filteredTracks.map((t) => t.id)).toEqual(expect.arrayContaining([1, 3]));
     });
 
     it('uses AND semantics — track must have ALL active tag filters', () => {
@@ -199,9 +198,7 @@ describe('genre, key, and rating filters', () => {
         store.genreFilter = 'techno';
 
         expect(store.filteredTracks).toHaveLength(2);
-        expect(store.filteredTracks.map((t) => t.id)).toEqual(
-            expect.arrayContaining([1, 3]),
-        );
+        expect(store.filteredTracks.map((t) => t.id)).toEqual(expect.arrayContaining([1, 3]));
     });
 
     it('keyFilter does an exact match', () => {
@@ -226,9 +223,7 @@ describe('genre, key, and rating filters', () => {
         store.ratingFilter = 3;
 
         expect(store.filteredTracks).toHaveLength(2);
-        expect(store.filteredTracks.map((t) => t.id)).toEqual(
-            expect.arrayContaining([1, 2]),
-        );
+        expect(store.filteredTracks.map((t) => t.id)).toEqual(expect.arrayContaining([1, 2]));
     });
 });
 

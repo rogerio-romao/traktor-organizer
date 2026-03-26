@@ -9,10 +9,7 @@ export interface TrackFilters {
 }
 
 // oxlint-disable-next-line max-statements
-export function filterTracks(
-    tracks: TrackRow[],
-    filters: TrackFilters,
-): TrackRow[] {
+export function filterTracks(tracks: TrackRow[], filters: TrackFilters): TrackRow[] {
     let result = tracks;
 
     if (filters.activeTagFilters.length > 0) {

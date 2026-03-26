@@ -15,17 +15,13 @@ export async function getDb(): Promise<Database> {
 
 export async function getTagBlocklist(): Promise<Set<string>> {
     const database = await getDb();
-    const rows = await database.select<{ name: string }[]>(
-        'SELECT name FROM tag_blocklist',
-    );
+    const rows = await database.select<{ name: string }[]>('SELECT name FROM tag_blocklist');
     return new Set(rows.map((r) => r.name));
 }
 
 export async function runStartupMaintenance(): Promise<void> {
     const database = await getDb();
-    const rows = await database.select<{ name: string }[]>(
-        'SELECT name FROM tag_blocklist',
-    );
+    const rows = await database.select<{ name: string }[]>('SELECT name FROM tag_blocklist');
     const names = rows.map((r) => r.name);
     if (names.length === 0) return;
     // tauri-plugin-sql uses positional params ($1, $2, ...), so we build one placeholder
@@ -35,10 +31,7 @@ export async function runStartupMaintenance(): Promise<void> {
         `DELETE FROM track_tags WHERE tag_id IN (SELECT id FROM tags WHERE name IN (${placeholders}))`,
         names,
     );
-    await database.execute(
-        `DELETE FROM tags WHERE name IN (${placeholders})`,
-        names,
-    );
+    await database.execute(`DELETE FROM tags WHERE name IN (${placeholders})`, names);
     // Remove any tags that are no longer associated with any track
     await database.execute(
         `DELETE FROM tags WHERE NOT EXISTS (SELECT 1 FROM track_tags WHERE tag_id = tags.id)`,
@@ -112,10 +105,7 @@ export function dbRowToTrackRow(row: TrackDbRow, tags: string[]): TrackRow {
 
 export async function addToTagBlocklist(tagName: string): Promise<void> {
     const database = await getDb();
-    await database.execute(
-        'INSERT OR IGNORE INTO tag_blocklist (name) VALUES ($1)',
-        [tagName],
-    );
+    await database.execute('INSERT OR IGNORE INTO tag_blocklist (name) VALUES ($1)', [tagName]);
     await database.execute(
         'DELETE FROM track_tags WHERE tag_id = (SELECT id FROM tags WHERE name = $1)',
         [tagName],

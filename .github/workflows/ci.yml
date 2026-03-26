@@ -32,6 +32,9 @@ jobs:
             - name: Run lint
               run: pnpm lint:ts
 
+            - name: Run format check
+              run: pnpm format:ts:check
+
             - name: Run tests
               run: pnpm test:ci
 

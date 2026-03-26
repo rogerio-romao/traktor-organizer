@@ -8,9 +8,7 @@ const cache = new Map<string, string>();
  * Returns a base64 data URL suitable for use in an <img> src, or null if none found.
  * Results are cached in memory for the lifetime of the app session.
  */
-export async function extractCoverArt(
-    filePath: string,
-): Promise<string | null> {
+export async function extractCoverArt(filePath: string): Promise<string | null> {
     if (cache.has(filePath)) {
         const cached = cache.get(filePath);
         return cached ?? null;

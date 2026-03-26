@@ -1,16 +1,17 @@
 // oxlint-disable max-lines
 
-import { createDbState } from './helpers/db-stub';
-import { useTracksStore } from '@/stores/tracks';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // addToTagBlocklist lives on the database service, not the store —
 // the store has no wrapper method for it, so we call it directly here.
 import { addToTagBlocklist } from '@/services/database';
+import { useTracksStore } from '@/stores/tracks';
 
-import type { DbState } from './helpers/db-stub';
+import { createDbState } from './helpers/db-stub';
+
 import type { TrackDbRow, TrackRow } from '@/types/track';
+import type { DbState } from './helpers/db-stub';
 
 // ── Test setup ───────────────────────────────────────────────────────────────
 
@@ -276,9 +277,7 @@ describe('addToTagBlocklist', () => {
         await addToTagBlocklist('vocal');
         await addToTagBlocklist('vocal');
 
-        expect(s.tag_blocklist.filter((r) => r.name === 'vocal')).toHaveLength(
-            1,
-        );
+        expect(s.tag_blocklist.filter((r) => r.name === 'vocal')).toHaveLength(1);
     });
 
     // oxlint-disable-next-line max-statements
@@ -296,8 +295,6 @@ describe('addToTagBlocklist', () => {
         await addToTagBlocklist('vocal');
         await store.loadAllTracks();
 
-        expect(store.allTracks.every((t) => !t.tags.includes('vocal'))).toBe(
-            true,
-        );
+        expect(store.allTracks.every((t) => !t.tags.includes('vocal'))).toBe(true);
     });
 });

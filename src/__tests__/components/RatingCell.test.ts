@@ -1,16 +1,12 @@
 import { createTestingPinia } from '@pinia/testing';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/vue';
-
-import { useTracksStore } from '@/stores/tracks';
+import { describe, expect, it } from 'vitest';
 
 import RatingCell from '@/components/tracks/RatingCell.vue';
+import { useTracksStore } from '@/stores/tracks';
 
-function renderCell(
-    value: number,
-    trackId = 42,
-): ReturnType<typeof useTracksStore> {
+function renderCell(value: number, trackId = 42): ReturnType<typeof useTracksStore> {
     render(RatingCell, {
         global: { plugins: [createTestingPinia()] },
         props: { trackId, value },

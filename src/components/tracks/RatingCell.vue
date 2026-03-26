@@ -1,20 +1,21 @@
 <script setup lang="ts">
-    import { ref } from 'vue';
-    import { useTracksStore } from '@/stores/tracks';
+import { ref } from 'vue';
 
-    const { value, trackId } = defineProps<{
-        value: number;
-        trackId: number;
-    }>();
-    const tracksStore = useTracksStore();
-    const hovered = ref(0);
+import { useTracksStore } from '@/stores/tracks';
 
-    async function setRating(star: number): Promise<void> {
-        // Only clear (set to 0) when clicking 1★ that is already the current rating
-        const newRating = star === 1 && value === 1 ? 0 : star;
-        if (newRating === value) return;
-        await tracksStore.updateRating(trackId, newRating);
-    }
+const { value, trackId } = defineProps<{
+    value: number;
+    trackId: number;
+}>();
+const tracksStore = useTracksStore();
+const hovered = ref(0);
+
+async function setRating(star: number): Promise<void> {
+    // Only clear (set to 0) when clicking 1★ that is already the current rating
+    const newRating = star === 1 && value === 1 ? 0 : star;
+    if (newRating === value) return;
+    await tracksStore.updateRating(trackId, newRating);
+}
 </script>
 
 <template>
@@ -42,20 +43,20 @@
 </template>
 
 <style scoped>
-    .rating {
-        display: flex;
-        gap: 1px;
-        cursor: pointer;
-    }
-    .star {
-        font-size: 11px;
-        color: var(--rating-empty, #444);
-        line-height: 1;
-    }
-    .star.filled {
-        color: var(--rating-star, #ff6600);
-    }
-    .star.preview {
-        color: color-mix(in srgb, var(--accent) 60%, transparent);
-    }
+.rating {
+    display: flex;
+    gap: 1px;
+    cursor: pointer;
+}
+.star {
+    font-size: 11px;
+    color: var(--rating-empty, #444);
+    line-height: 1;
+}
+.star.filled {
+    color: var(--rating-star, #ff6600);
+}
+.star.preview {
+    color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
 </style>

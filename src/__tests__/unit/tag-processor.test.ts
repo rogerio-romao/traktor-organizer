@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+
 import { normalizeTag, splitCommentIntoTags } from '@/services/tag-processor';
 
 describe('normalizeTag', () => {
@@ -43,10 +44,7 @@ describe('splitCommentIntoTags', () => {
 
     it('applies blocklist and excludes blocked tags (case-insensitive)', () => {
         const blocklist = new Set(['bad', 'ugly']);
-        const result = splitCommentIntoTags(
-            'good bad good ugly UGLY',
-            blocklist,
-        );
+        const result = splitCommentIntoTags('good bad good ugly UGLY', blocklist);
         expect(result).toEqual(['good']);
     });
 

@@ -19,10 +19,7 @@
         "eslint/max-lines-per-function": ["warn", { "max": 100 }],
         "eslint/max-params": ["warn", { "max": 4 }],
         "eslint/no-continue": "off",
-        "eslint/no-duplicate-imports": [
-            "error",
-            { "allowSeparateTypeImports": true }
-        ],
+        "eslint/no-duplicate-imports": ["error", { "allowSeparateTypeImports": true }],
         "eslint/no-inline-comments": "off",
         "eslint/no-magic-numbers": "off",
         "eslint/no-plusplus": ["warn", { "allowForLoopAfterthoughts": true }],
@@ -48,14 +45,7 @@
                 "enforceForRenamedProperties": false
             }
         ],
-        "eslint/sort-imports": [
-            "warn",
-            {
-                "ignoreCase": true,
-                "allowSeparatedGroups": true,
-                "memberSyntaxSortOrder": ["none", "all", "single", "multiple"]
-            }
-        ],
+        "eslint/sort-imports": "off",
         "import/group-exports": "off",
         "import/max-dependencies": [
             "warn",
@@ -77,15 +67,7 @@
     "overrides": [
         {
             "files": ["src/__tests__/**/*.ts", "src/__tests__/**/*.vue"],
-            "plugins": [
-                "eslint",
-                "import",
-                "oxc",
-                "typescript",
-                "unicorn",
-                "vitest",
-                "vue"
-            ],
+            "plugins": ["eslint", "import", "oxc", "typescript", "unicorn", "vitest", "vue"],
             "rules": {
                 "eslint/no-empty-function": "off"
             }

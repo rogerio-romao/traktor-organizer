@@ -1,15 +1,15 @@
 import { createTestingPinia } from '@pinia/testing';
 import userEvent from '@testing-library/user-event';
+import { render, screen } from '@testing-library/vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed, nextTick, ref } from 'vue';
-import { render, screen } from '@testing-library/vue';
 
 import FilterBar from '@/components/layout/FilterBar.vue';
 import { useTracksStore } from '@/stores/tracks';
 
+import type { ComputedRef, Ref } from 'vue';
 import type { Playlist } from '@/stores/playlists';
 import type { TrackRow } from '@/types/track';
-import type { ComputedRef, Ref } from 'vue';
 
 vi.mock('@/composables/usePlaylistView', () => ({
     usePlaylistView: (): {
@@ -84,9 +84,7 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-function renderBar(
-    extraTracks: TrackRow[] = [],
-): ReturnType<typeof useTracksStore> {
+function renderBar(extraTracks: TrackRow[] = []): ReturnType<typeof useTracksStore> {
     const tracks = [
         makeTrack(1, { genre: 'Techno', musicalKey: '4d' }),
         makeTrack(2, { genre: 'House', musicalKey: '5m' }),
@@ -142,9 +140,7 @@ describe('FilterBar', () => {
         const store = renderBar();
         store.genreFilter = 'Techno';
         await nextTick();
-        await userEvent.click(
-            screen.getByRole('button', { name: /Clear all/i }),
-        );
+        await userEvent.click(screen.getByRole('button', { name: /Clear all/i }));
         expect(store.clearFilters).toHaveBeenCalled();
     });
 });

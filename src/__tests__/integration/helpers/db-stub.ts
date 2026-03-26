@@ -64,10 +64,7 @@ function handleExecute(
     const p = params ?? [];
 
     // Big UPDATE from upsertTrack (file_path = $30)
-    if (
-        sl.startsWith('update tracks set') &&
-        sl.includes('where file_path = $30')
-    ) {
+    if (sl.startsWith('update tracks set') && sl.includes('where file_path = $30')) {
         // params: p[0]=title…p[2]=album, p[3]=bpm…p[5]=musicalKeyValue,
         //         p[6]=duration, p[7]=durationFloat, p[8]=label…p[11]=releaseDate,
         //         p[12]=mix…p[15]=filesize, p[16]=playCount…p[18]=color,
@@ -116,10 +113,7 @@ function handleExecute(
     }
 
     // Simple single-field UPDATE for inline edits — WHERE id = $2
-    if (
-        sl.startsWith('update tracks set title') &&
-        sl.includes('where id = $2')
-    ) {
+    if (sl.startsWith('update tracks set title') && sl.includes('where id = $2')) {
         const t = s.tracks.find((r) => r.id === p[1]);
         if (t) {
             t.title = p[0] as string;
@@ -127,10 +121,7 @@ function handleExecute(
         }
         return { rowsAffected: 0 };
     }
-    if (
-        sl.startsWith('update tracks set artist') &&
-        sl.includes('where id = $2')
-    ) {
+    if (sl.startsWith('update tracks set artist') && sl.includes('where id = $2')) {
         const t = s.tracks.find((r) => r.id === p[1]);
         if (t) {
             t.artist = p[0] as string;
@@ -138,10 +129,7 @@ function handleExecute(
         }
         return { rowsAffected: 0 };
     }
-    if (
-        sl.startsWith('update tracks set genre') &&
-        sl.includes('where id = $2')
-    ) {
+    if (sl.startsWith('update tracks set genre') && sl.includes('where id = $2')) {
         const t = s.tracks.find((r) => r.id === p[1]);
         if (t) {
             t.genre = p[0] as string;
@@ -149,10 +137,7 @@ function handleExecute(
         }
         return { rowsAffected: 0 };
     }
-    if (
-        sl.startsWith('update tracks set rating') &&
-        sl.includes('where id = $2')
-    ) {
+    if (sl.startsWith('update tracks set rating') && sl.includes('where id = $2')) {
         const t = s.tracks.find((r) => r.id === p[1]);
         if (t) {
             t.rating = p[0] as number;
@@ -220,14 +205,9 @@ function handleExecute(
     }
 
     // INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES ($1, $2)
-    if (
-        sl.startsWith('insert or ignore into track_tags') &&
-        sl.includes('values')
-    ) {
+    if (sl.startsWith('insert or ignore into track_tags') && sl.includes('values')) {
         const [trackId, tagId] = [p[0] as number, p[1] as number];
-        const exists = s.track_tags.find(
-            (tt) => tt.track_id === trackId && tt.tag_id === tagId,
-        );
+        const exists = s.track_tags.find((tt) => tt.track_id === trackId && tt.tag_id === tagId);
         if (!exists) {
             s.track_tags.push({ tag_id: tagId, track_id: trackId });
             return { rowsAffected: 1 };
@@ -236,16 +216,11 @@ function handleExecute(
     }
 
     // INSERT OR IGNORE INTO track_tags (...) SELECT $1, id FROM tags WHERE name = $2
-    if (
-        sl.startsWith('insert or ignore into track_tags') &&
-        sl.includes('select')
-    ) {
+    if (sl.startsWith('insert or ignore into track_tags') && sl.includes('select')) {
         const [trackId, tagName] = [p[0] as number, p[1] as string];
         const tag = s.tags.find((t) => t.name === tagName);
         if (!tag) return { rowsAffected: 0 };
-        const exists = s.track_tags.find(
-            (tt) => tt.track_id === trackId && tt.tag_id === tag.id,
-        );
+        const exists = s.track_tags.find((tt) => tt.track_id === trackId && tt.tag_id === tag.id);
         if (!exists) {
             s.track_tags.push({ tag_id: tag.id, track_id: trackId });
             return { rowsAffected: 1 };
@@ -254,24 +229,16 @@ function handleExecute(
     }
 
     // DELETE FROM track_tags WHERE track_id = $1 AND tag_id = (SELECT id FROM tags WHERE name = $2)
-    if (
-        sl.startsWith('delete from track_tags') &&
-        sl.includes('where track_id = $1')
-    ) {
+    if (sl.startsWith('delete from track_tags') && sl.includes('where track_id = $1')) {
         const tag = s.tags.find((t) => t.name === p[1]);
         if (!tag) return { rowsAffected: 0 };
         const before = s.track_tags.length;
-        s.track_tags = s.track_tags.filter(
-            (tt) => !(tt.track_id === p[0] && tt.tag_id === tag.id),
-        );
+        s.track_tags = s.track_tags.filter((tt) => !(tt.track_id === p[0] && tt.tag_id === tag.id));
         return { rowsAffected: before - s.track_tags.length };
     }
 
     // DELETE FROM tags WHERE name = $1 AND NOT EXISTS (...) — orphan cleanup
-    if (
-        sl.startsWith('delete from tags where name = $1') &&
-        sl.includes('not exists')
-    ) {
+    if (sl.startsWith('delete from tags where name = $1') && sl.includes('not exists')) {
         const tag = s.tags.find((t) => t.name === p[0]);
         if (!tag) return { rowsAffected: 0 };
         const hasLinks = s.track_tags.some((tt) => tt.tag_id === tag.id);
@@ -285,9 +252,7 @@ function handleExecute(
     // DELETE FROM playlist_tracks WHERE playlist_id = $1
     if (sl.startsWith('delete from playlist_tracks')) {
         const before = s.playlist_tracks.length;
-        s.playlist_tracks = s.playlist_tracks.filter(
-            (pt) => pt.playlist_id !== p[0],
-        );
+        s.playlist_tracks = s.playlist_tracks.filter((pt) => pt.playlist_id !== p[0]);
         return { rowsAffected: before - s.playlist_tracks.length };
     }
 
@@ -296,11 +261,7 @@ function handleExecute(
         sl.startsWith('insert into playlist_tracks') ||
         (sl.includes('into playlist_tracks') && sl.includes('values'))
     ) {
-        const [pid, tid, pos] = [
-            p[0] as number,
-            p[1] as number,
-            p[2] as number,
-        ];
+        const [pid, tid, pos] = [p[0] as number, p[1] as number, p[2] as number];
         const exists = s.playlist_tracks.find(
             (pt) => pt.playlist_id === pid && pt.track_id === tid,
         );
@@ -332,9 +293,7 @@ function handleSelect(s: DbState, sql: string, params: SqlParam[]): object[] {
             .filter((t) => !blocklist.has(t.artist))
             .toSorted((a, b) => {
                 const cmp = (a.artist ?? '').localeCompare(b.artist ?? '');
-                return cmp === 0
-                    ? (a.title ?? '').localeCompare(b.title ?? '')
-                    : cmp;
+                return cmp === 0 ? (a.title ?? '').localeCompare(b.title ?? '') : cmp;
             });
     }
 
@@ -352,9 +311,7 @@ function handleSelect(s: DbState, sql: string, params: SqlParam[]): object[] {
 
     // SELECT id FROM tracks WHERE file_path = $1
     if (sl.startsWith('select id from tracks where file_path')) {
-        return s.tracks
-            .filter((t) => t.file_path === p[0])
-            .map((t) => ({ id: t.id }));
+        return s.tracks.filter((t) => t.file_path === p[0]).map((t) => ({ id: t.id }));
     }
 
     // SELECT id FROM tags WHERE name = $1
@@ -363,10 +320,7 @@ function handleSelect(s: DbState, sql: string, params: SqlParam[]): object[] {
     }
 
     // loadPlaylists: SELECT p.id, p.name, ... FROM playlists p LEFT JOIN playlist_tracks
-    if (
-        sl.includes('from playlists p') &&
-        sl.includes('left join playlist_tracks')
-    ) {
+    if (sl.includes('from playlists p') && sl.includes('left join playlist_tracks')) {
         return [...s.playlists]
             .map((pl) => ({
                 created_at: pl.created_at ?? new Date().toISOString(),
@@ -374,18 +328,13 @@ function handleSelect(s: DbState, sql: string, params: SqlParam[]): object[] {
                 filter_state: pl.filter_state ?? null,
                 id: pl.id,
                 name: pl.name,
-                track_count: s.playlist_tracks.filter(
-                    (pt) => pt.playlist_id === pl.id,
-                ).length,
+                track_count: s.playlist_tracks.filter((pt) => pt.playlist_id === pl.id).length,
             }))
             .toSorted((a, b) => b.created_at.localeCompare(a.created_at));
     }
 
     // loadPlaylistTracks tracks: SELECT t.* FROM tracks t JOIN playlist_tracks pt WHERE pt.playlist_id = $1
-    if (
-        sl.includes('from tracks t') &&
-        sl.includes('join playlist_tracks pt')
-    ) {
+    if (sl.includes('from tracks t') && sl.includes('join playlist_tracks pt')) {
         const pts = s.playlist_tracks
             .filter((pt) => pt.playlist_id === p[0])
             .toSorted((a, b) => a.position - b.position);
@@ -397,9 +346,7 @@ function handleSelect(s: DbState, sql: string, params: SqlParam[]): object[] {
     // loadPlaylistTracks tags: SELECT tt.track_id, tg.name ... WHERE tt.track_id IN (SELECT ...)
     if (sl.includes('track_tags tt') && sl.includes('where tt.track_id in')) {
         const trackIds = new Set(
-            s.playlist_tracks
-                .filter((pt) => pt.playlist_id === p[0])
-                .map((pt) => pt.track_id),
+            s.playlist_tracks.filter((pt) => pt.playlist_id === p[0]).map((pt) => pt.track_id),
         );
         return s.track_tags
             .filter((tt) => trackIds.has(tt.track_id))
@@ -433,9 +380,7 @@ export function makeDbMock(getState: () => DbState): object {
             }
             const tag = s.tags.find((t) => t.name === tagName);
             if (tag) {
-                s.track_tags = s.track_tags.filter(
-                    (tt) => tt.tag_id !== tag.id,
-                );
+                s.track_tags = s.track_tags.filter((tt) => tt.tag_id !== tag.id);
                 s.tags = s.tags.filter((t) => t.name !== tagName);
             }
         },
@@ -485,13 +430,9 @@ export function makeDbMock(getState: () => DbState): object {
         getDb: () =>
             Promise.resolve({
                 execute: (sql: string, params?: SqlParam[]) =>
-                    Promise.resolve(
-                        handleExecute(getState(), sql, params ?? []),
-                    ),
+                    Promise.resolve(handleExecute(getState(), sql, params ?? [])),
                 select: (sql: string, params?: SqlParam[]) =>
-                    Promise.resolve(
-                        handleSelect(getState(), sql, params ?? []),
-                    ),
+                    Promise.resolve(handleSelect(getState(), sql, params ?? [])),
             }),
 
         getSetting: (key: string) => {
@@ -511,11 +452,7 @@ export function makeDbMock(getState: () => DbState): object {
 
         runStartupMaintenance: async () => {},
 
-        savePlaylist: (
-            name: string,
-            trackIds: number[],
-            filterState?: string,
-        ) => {
+        savePlaylist: (name: string, trackIds: number[], filterState?: string) => {
             const s = getState();
             const id = nextId(s.playlists);
             s.playlists.push({
