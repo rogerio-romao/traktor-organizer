@@ -101,6 +101,7 @@ const keys = computed(() => {
     <div class="filter-controls">
       <select
         class="filter-select"
+        aria-label="Genre"
         :class="{ active: tracksStore.genreFilter !== null }"
         :value="tracksStore.genreFilter ?? ''"
         @change="tracksStore.genreFilter = ($event.target as HTMLSelectElement).value || null"
@@ -111,6 +112,7 @@ const keys = computed(() => {
 
       <select
         class="filter-select"
+        aria-label="Key"
         :class="{ active: tracksStore.keyFilter !== null }"
         :value="tracksStore.keyFilter ?? ''"
         @change="tracksStore.keyFilter = ($event.target as HTMLSelectElement).value || null"
@@ -121,6 +123,7 @@ const keys = computed(() => {
 
       <select
         class="filter-select"
+        aria-label="Rating"
         :class="{ active: tracksStore.ratingFilter !== null }"
         :value="tracksStore.ratingFilter ?? ''"
         @change="tracksStore.ratingFilter = ($event.target as HTMLSelectElement).value ? Number(($event.target as HTMLSelectElement).value) : null"

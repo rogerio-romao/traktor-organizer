@@ -7,7 +7,7 @@ const { visible, message, confirmLabel, respond } = useConfirm()
 <template>
   <Teleport to="body">
     <div v-if="visible" class="dialog-overlay" @mousedown.self="respond(false)">
-      <div class="dialog" @keydown.esc="respond(false)">
+      <div class="dialog" role="dialog" :aria-label="message" @keydown.esc="respond(false)">
         <p class="dialog-message">{{ message }}</p>
         <div class="dialog-actions">
           <button class="btn-cancel" @click="respond(false)">Cancel</button>

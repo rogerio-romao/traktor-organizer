@@ -15,11 +15,15 @@ async function setRating(star: number) {
 </script>
 
 <template>
-  <div class="rating">
+  <div class="rating" role="radiogroup" aria-label="Rating">
     <span
       v-for="i in 5"
       :key="i"
       class="star"
+      role="radio"
+      :aria-checked="(hovered === 0 ? i <= value : i <= hovered).toString()"
+      :aria-label="`${i} star${i > 1 ? 's' : ''}`"
+      tabindex="0"
       :class="{
         filled: hovered === 0 && i <= value,
         preview: hovered > 0 && i <= hovered,
@@ -27,6 +31,8 @@ async function setRating(star: number) {
       @mouseenter="hovered = i"
       @mouseleave="hovered = 0"
       @click.stop="setRating(i)"
+      @keydown.enter.stop="setRating(i)"
+      @keydown.space.prevent.stop="setRating(i)"
     >★</span>
   </div>
 </template>

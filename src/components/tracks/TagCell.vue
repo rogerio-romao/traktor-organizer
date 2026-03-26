@@ -67,9 +67,9 @@ function onTagRightClick(tag: string, e: MouseEvent) {
       @contextmenu.prevent="onTagRightClick(tag, $event)"
     >
       {{ tag }}
-      <button class="pill-remove" title="Remove tag from track" @click.stop="removeTag(tag)">−</button>
+      <button class="pill-remove" :aria-label="`Remove tag ${tag}`" @click.stop="removeTag(tag)">−</button>
     </span>
-    <button class="tag-edit-btn" title="Edit tags" @click.stop="openTagEditor(trackId)">+</button>
+    <button class="tag-edit-btn" title="Edit tags" aria-label="Add tag" @click.stop="openTagEditor(trackId)">+</button>
   </div>
 </template>
 
