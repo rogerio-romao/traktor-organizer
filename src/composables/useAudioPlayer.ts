@@ -107,9 +107,7 @@ audio.addEventListener('durationchange', () => {
 });
 audio.addEventListener('ended', () => {
     if (queue.value.length > 0) {
-        const idx = queue.value.findIndex(
-            (t) => t.id === currentTrack.value?.id,
-        );
+        const idx = queue.value.findIndex((t) => t.id === currentTrack.value?.id);
         if (idx !== -1 && idx < queue.value.length - 1) {
             loadAndPlay(queue.value[idx + 1]);
         } else {
@@ -209,25 +207,18 @@ export function useAudioPlayer(): {
 
     function playNext(): void {
         if (queue.value.length === 0) return;
-        const idx = queue.value.findIndex(
-            (t) => t.id === currentTrack.value?.id,
-        );
-        if (idx !== -1 && idx < queue.value.length - 1)
-            loadAndPlay(queue.value[idx + 1]);
+        const idx = queue.value.findIndex((t) => t.id === currentTrack.value?.id);
+        if (idx !== -1 && idx < queue.value.length - 1) loadAndPlay(queue.value[idx + 1]);
     }
 
     function playPrev(): void {
         if (queue.value.length === 0) return;
-        const idx = queue.value.findIndex(
-            (t) => t.id === currentTrack.value?.id,
-        );
+        const idx = queue.value.findIndex((t) => t.id === currentTrack.value?.id);
         if (idx > 0) loadAndPlay(queue.value[idx - 1]);
     }
 
     const queueIndex = computed(() =>
-        queue.value.length > 0
-            ? queue.value.findIndex((t) => t.id === currentTrack.value?.id)
-            : -1,
+        queue.value.length > 0 ? queue.value.findIndex((t) => t.id === currentTrack.value?.id) : -1,
     );
 
     function scrollToCurrentTrack(): void {

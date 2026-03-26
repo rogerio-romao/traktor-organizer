@@ -3,8 +3,8 @@ import { ref } from 'vue';
 
 import { dbRowToTrackRow, getDb } from '@/services/database';
 
-import type { TrackFilters } from '@/utils/filterTracks';
 import type { TrackDbRow, TrackRow } from '@/types/track';
+import type { TrackFilters } from '@/utils/filterTracks';
 
 export interface Playlist {
     id: number;
@@ -40,9 +40,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
         playlists.value = rows.map((r) => ({
             createdAt: r.created_at,
             description: r.description,
-            filterState: r.filter_state
-                ? (JSON.parse(r.filter_state) as TrackFilters)
-                : null,
+            filterState: r.filter_state ? (JSON.parse(r.filter_state) as TrackFilters) : null,
             id: r.id,
             name: r.name,
             trackCount: r.track_count,
@@ -84,9 +82,7 @@ export const usePlaylistsStore = defineStore('playlists', () => {
             else tagMap.set(track_id, [name]);
         }
 
-        return rows.map((row) =>
-            dbRowToTrackRow(row, tagMap.get(row.id) ?? []),
-        );
+        return rows.map((row) => dbRowToTrackRow(row, tagMap.get(row.id) ?? []));
     }
 
     return { deletePlaylist, loadPlaylistTracks, loadPlaylists, playlists };

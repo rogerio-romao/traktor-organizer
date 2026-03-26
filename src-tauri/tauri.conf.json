@@ -1,46 +1,46 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Traktor Organizer",
-  "version": "0.1.0",
-  "identifier": "com.rogerioromao.traktor-organizer",
-  "build": {
-    "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "Traktor Organizer",
-        "width": 1400,
-        "height": 900,
-        "minWidth": 900,
-        "minHeight": 600
-      }
-    ],
-    "security": {
-      "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost blob: data:; media-src 'self' asset: https://asset.localhost http://asset.localhost",
-      "assetProtocol": {
-        "enable": true,
-        "scope": ["**"]
-      }
+    "$schema": "https://schema.tauri.app/config/2",
+    "productName": "Traktor Organizer",
+    "version": "0.1.0",
+    "identifier": "com.rogerioromao.traktor-organizer",
+    "build": {
+        "beforeDevCommand": "pnpm dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "pnpm build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "Traktor Organizer",
+                "width": 1400,
+                "height": 900,
+                "minWidth": 900,
+                "minHeight": 600
+            }
+        ],
+        "security": {
+            "csp": "default-src 'self' ipc: http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: http://asset.localhost blob: data:; media-src 'self' asset: https://asset.localhost http://asset.localhost",
+            "assetProtocol": {
+                "enable": true,
+                "scope": ["**"]
+            }
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ]
+    },
+    "plugins": {
+        "sql": {
+            "preload": ["sqlite:traktor-organizer.db"]
+        }
     }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  },
-  "plugins": {
-    "sql": {
-      "preload": ["sqlite:traktor-organizer.db"]
-    }
-  }
 }

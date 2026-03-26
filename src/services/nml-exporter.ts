@@ -30,10 +30,7 @@ function secondsSinceMidnight(): number {
     return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
 }
 
-export function buildPlaylistNml(
-    playlistName: string,
-    tracks: TrackRow[],
-): string {
+export function buildPlaylistNml(playlistName: string, tracks: TrackRow[]): string {
     const today = todayNml();
     const time = secondsSinceMidnight();
     const uuid = crypto.randomUUID();
@@ -42,8 +39,7 @@ export function buildPlaylistNml(
         .map((t) => {
             const ranking = ratingToRanking(t.rating);
             const bpmStr = t.bpm === null ? null : t.bpm.toFixed(6);
-            const bpmQual =
-                t.bpmQuality === null ? null : t.bpmQuality.toFixed(1);
+            const bpmQual = t.bpmQuality === null ? null : t.bpmQuality.toFixed(1);
             const playcount = t.playCount > 0 ? t.playCount : null;
 
             const tempo = bpmStr

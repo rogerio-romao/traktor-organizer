@@ -1,13 +1,13 @@
 import { computed, ref } from 'vue';
 
-import { filterTracks } from '@/utils/filterTracks';
 import { getDb } from '@/services/database';
 import { usePlaylistsStore } from '@/stores/playlists';
 import { useTracksStore } from '@/stores/tracks';
+import { filterTracks } from '@/utils/filterTracks';
 
+import type { ComputedRef, Ref } from 'vue';
 import type { Playlist } from '@/stores/playlists';
 import type { TrackRow } from '@/types/track';
-import type { ComputedRef, Ref } from 'vue';
 
 // Module-level singleton — controls which playlist is open in the main view
 const activePlaylist = ref<Playlist | null>(null);
@@ -91,9 +91,7 @@ export function usePlaylistView(): {
 
         playlistLoading.value = true;
         const store = usePlaylistsStore();
-        playlistTracks.value = withLiveObjects(
-            await store.loadPlaylistTracks(playlist.id),
-        );
+        playlistTracks.value = withLiveObjects(await store.loadPlaylistTracks(playlist.id));
         takeSnapshot(playlistTracks.value);
         playlistLoading.value = false;
 
@@ -124,9 +122,7 @@ export function usePlaylistView(): {
 
     function removeTrack(trackId: number): void {
         removedTrackIds.value = new Set([...removedTrackIds.value, trackId]);
-        playlistTracks.value = playlistTracks.value.filter(
-            (t) => t.id !== trackId,
-        );
+        playlistTracks.value = playlistTracks.value.filter((t) => t.id !== trackId);
     }
 
     function applySuggestedUpdate(): void {
@@ -143,9 +139,7 @@ export function usePlaylistView(): {
         if (!activePlaylist.value) return;
         const db = await getDb();
         const pid = activePlaylist.value.id;
-        await db.execute('DELETE FROM playlist_tracks WHERE playlist_id = $1', [
-            pid,
-        ]);
+        await db.execute('DELETE FROM playlist_tracks WHERE playlist_id = $1', [pid]);
         await Promise.all(
             trackIds.map((id, i) =>
                 db.execute(
@@ -169,9 +163,7 @@ export function usePlaylistView(): {
                 ...store.playlists[idx],
                 trackCount: trackIds.length,
             };
-        playlistTracks.value = withLiveObjects(
-            await store.loadPlaylistTracks(pid),
-        );
+        playlistTracks.value = withLiveObjects(await store.loadPlaylistTracks(pid));
         takeSnapshot(playlistTracks.value);
         await store.loadPlaylists();
     }

@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-    formatDuration,
-    rankingToStars,
-    starsToRanking,
-} from '@/utils/constants';
+
+import { formatDuration, rankingToStars, starsToRanking } from '@/utils/constants';
 
 describe('rankingToStars / starsToRanking', () => {
     it('rankingToStars: 0→0, 51→1, 102→2, 153→3, 204→4, 255→5', () => {

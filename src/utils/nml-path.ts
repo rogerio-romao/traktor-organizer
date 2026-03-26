@@ -10,11 +10,7 @@
  *   VOLUME = "C:", DIR = "/:Music/:Tracks/:", FILE = "track.mp3"
  *   → "C:/Music/Tracks/track.mp3"
  */
-export function nmlLocationToFilePath(
-    dir: string,
-    file: string,
-    volume: string,
-): string {
+export function nmlLocationToFilePath(dir: string, file: string, volume: string): string {
     // Replace all "/:" with "/" to get a normal path
     let osDir = dir.replaceAll('/:', '/');
 

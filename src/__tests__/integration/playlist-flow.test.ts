@@ -1,16 +1,17 @@
 // oxlint-disable max-lines
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createDbState } from './helpers/db-stub';
+import { usePlaylistView } from '@/composables/usePlaylistView';
 import { savePlaylist } from '@/services/database';
 import { usePlaylistsStore } from '@/stores/playlists';
-import { usePlaylistView } from '@/composables/usePlaylistView';
 import { useTracksStore } from '@/stores/tracks';
 
-import type { DbState } from './helpers/db-stub';
+import { createDbState } from './helpers/db-stub';
+
 import type { TrackDbRow, TrackRow } from '@/types/track';
+import type { DbState } from './helpers/db-stub';
 
 // ── Test setup ───────────────────────────────────────────────────────────────
 
@@ -21,10 +22,7 @@ vi.mock('@/services/database', async () => {
     return makeDbMock(() => s);
 });
 
-function makeDbTrack(
-    id: number,
-    overrides: Partial<TrackDbRow> = {},
-): TrackDbRow {
+function makeDbTrack(id: number, overrides: Partial<TrackDbRow> = {}): TrackDbRow {
     return {
         album: '',
         artist: `Artist ${id}`,
@@ -68,10 +66,7 @@ function makeDbTrack(
     };
 }
 
-function makeStoreTrack(
-    id: number,
-    overrides: Partial<TrackRow> = {},
-): TrackRow {
+function makeStoreTrack(id: number, overrides: Partial<TrackRow> = {}): TrackRow {
     return {
         album: '',
         artist: `Artist ${id}`,

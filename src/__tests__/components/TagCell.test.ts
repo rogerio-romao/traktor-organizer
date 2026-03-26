@@ -1,11 +1,10 @@
 import { createTestingPinia } from '@pinia/testing';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/vue';
-
-import { useTracksStore } from '@/stores/tracks';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import TagCell from '@/components/tracks/TagCell.vue';
+import { useTracksStore } from '@/stores/tracks';
 
 const mockContextMenuShow = vi.fn();
 const mockPlaylistSaveOpen = vi.fn();
@@ -41,10 +40,7 @@ beforeEach(() => {
     vi.clearAllMocks();
 });
 
-function renderCell(
-    tags: string[],
-    trackId = 42,
-): ReturnType<typeof useTracksStore> {
+function renderCell(tags: string[], trackId = 42): ReturnType<typeof useTracksStore> {
     render(TagCell, {
         global: { plugins: [createTestingPinia()] },
         props: { tags, trackId },
@@ -67,9 +63,7 @@ describe('TagCell', () => {
 
     it('remove button calls removeTagFromTrack', async () => {
         const store = renderCell(['techno', 'dark']);
-        await userEvent.click(
-            screen.getByRole('button', { name: 'Remove tag techno' }),
-        );
+        await userEvent.click(screen.getByRole('button', { name: 'Remove tag techno' }));
         expect(store.removeTagFromTrack).toHaveBeenCalledWith(42, 'techno');
     });
 

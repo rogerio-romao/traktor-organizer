@@ -1,10 +1,11 @@
 import { open } from '@tauri-apps/plugin-dialog';
 import { readTextFile } from '@tauri-apps/plugin-fs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { useImport } from '@/composables/useImport';
 
 import { createDbState } from './helpers/db-stub';
-import { useImport } from '@/composables/useImport';
 
 import type { DbState } from './helpers/db-stub';
 
@@ -114,10 +115,7 @@ describe('import pipeline', () => {
         track.rating = 2;
 
         // Re-import with a changed title (should trigger update, not skip)
-        const updatedNml = TRACK_1_NML.replace(
-            'Night Shift',
-            'Night Shift (Edit)',
-        );
+        const updatedNml = TRACK_1_NML.replace('Night Shift', 'Night Shift (Edit)');
         vi.mocked(readTextFile).mockResolvedValue(updatedNml);
         const stats2 = await pickAndImport();
 
@@ -153,9 +151,7 @@ describe('import pipeline', () => {
 
         // Both tags are linked to the track
         expect(s.track_tags).toHaveLength(2);
-        expect(s.track_tags.every((tt) => tt.track_id === s.tracks[0].id)).toBe(
-            true,
-        );
+        expect(s.track_tags.every((tt) => tt.track_id === s.tracks[0].id)).toBe(true);
     });
 
     it('blocklisted tags are not inserted or linked', async () => {

@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
-import { normalizeTag } from '@/services/tag-processor';
 import { dbRowToTrackRow, getDb } from '@/services/database';
+import { normalizeTag } from '@/services/tag-processor';
 
 import type { TrackDbRow, TrackRow } from '@/types/track';
 
@@ -71,9 +71,7 @@ export const useTracksStore = defineStore('tracks', () => {
             );
 
             // Step 2: load all track-tag associations in one query
-            const tagRows = await db.select<
-                { track_id: number; name: string }[]
-            >(
+            const tagRows = await db.select<{ track_id: number; name: string }[]>(
                 `SELECT tt.track_id, t.name
          FROM track_tags tt
          JOIN tags t ON t.id = tt.tag_id`,
@@ -90,9 +88,7 @@ export const useTracksStore = defineStore('tracks', () => {
                 }
             }
 
-            allTracks.value = rows.map((row) =>
-                dbRowToTrackRow(row, tagMap.get(row.id) ?? []),
-            );
+            allTracks.value = rows.map((row) => dbRowToTrackRow(row, tagMap.get(row.id) ?? []));
         } finally {
             isLoading.value = false;
         }
@@ -109,10 +105,7 @@ export const useTracksStore = defineStore('tracks', () => {
         if (track) track.genre = genre;
     }
 
-    async function updateArtist(
-        trackId: number,
-        artist: string,
-    ): Promise<void> {
+    async function updateArtist(trackId: number, artist: string): Promise<void> {
         const db = await getDb();
         await db.execute(
             "UPDATE tracks SET artist = $1, updated_at = datetime('now') WHERE id = $2",
@@ -132,10 +125,7 @@ export const useTracksStore = defineStore('tracks', () => {
         if (track) track.title = title;
     }
 
-    async function updateRating(
-        trackId: number,
-        rating: number,
-    ): Promise<void> {
+    async function updateRating(trackId: number, rating: number): Promise<void> {
         const db = await getDb();
         await db.execute(
             "UPDATE tracks SET rating = $1, updated_at = datetime('now') WHERE id = $2",
@@ -145,27 +135,21 @@ export const useTracksStore = defineStore('tracks', () => {
         if (track) track.rating = rating;
     }
 
-    async function addTagToTrack(
-        trackId: number,
-        tagName: string,
-    ): Promise<void> {
+    async function addTagToTrack(trackId: number, tagName: string): Promise<void> {
         const normalized = normalizeTag(tagName);
         if (!normalized) return;
 
         const db = await getDb();
-        await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [
+        await db.execute('INSERT OR IGNORE INTO tags (name) VALUES ($1)', [normalized]);
+        const rows = await db.select<{ id: number }[]>('SELECT id FROM tags WHERE name = $1', [
             normalized,
         ]);
-        const rows = await db.select<{ id: number }[]>(
-            'SELECT id FROM tags WHERE name = $1',
-            [normalized],
-        );
         if (!rows[0]) return;
 
-        await db.execute(
-            'INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES ($1, $2)',
-            [trackId, rows[0].id],
-        );
+        await db.execute('INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES ($1, $2)', [
+            trackId,
+            rows[0].id,
+        ]);
 
         const track = allTracks.value.find((t) => t.id === trackId);
         if (track && !track.tags.includes(normalized)) {
@@ -173,10 +157,7 @@ export const useTracksStore = defineStore('tracks', () => {
         }
     }
 
-    async function removeTagFromTrack(
-        trackId: number,
-        tagName: string,
-    ): Promise<void> {
+    async function removeTagFromTrack(trackId: number, tagName: string): Promise<void> {
         const db = await getDb();
         await db.execute(
             `DELETE FROM track_tags
