@@ -2,6 +2,8 @@
 
 > A smarter way to browse, tag, and curate your Traktor DJ collection.
 
+![alt text](public/screenshot.png)
+
 Traktor Organizer is a desktop app that reads your Traktor collection and gives you a fast, flexible way to organize your tracks, build playlists, and export them back into Traktor. Built for DJs with large collections who find Traktor's built-in tools limiting.
 
 ## How It Works
