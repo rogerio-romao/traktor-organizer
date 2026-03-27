@@ -49,19 +49,22 @@ const duration = ref(0);
 const scrollRequest = ref<{ trackId: number; seq: number } | null>(null);
 let scrollSeq = 0;
 const playError = ref<string | null>(null);
-let playErrorTimer: ReturnType<typeof setTimeout> | null = null;
+const playErrorTrack = ref<TrackRow | null>(null);
 const queue = ref<TrackRow[]>([]);
 
-function setPlayError(msg: string): void {
-    if (playErrorTimer) clearTimeout(playErrorTimer);
+function setPlayError(msg: string, track: TrackRow): void {
     playError.value = msg;
-    playErrorTimer = setTimeout(() => {
-        playError.value = null;
-    }, 4000);
+    playErrorTrack.value = track;
+}
+
+function clearPlayError(): void {
+    playError.value = null;
+    playErrorTrack.value = null;
 }
 
 // oxlint-disable-next-line max-statements
 async function loadAndPlay(track: TrackRow): Promise<void> {
+    clearPlayError();
     if (isPlaying.value) {
         await fadeOut(audio);
         audio.pause();
@@ -88,7 +91,7 @@ async function loadAndPlay(track: TrackRow): Promise<void> {
         isPlaying.value = true;
     } catch {
         isPlaying.value = false;
-        setPlayError(`Cannot play: ${track.title || track.fileName}`);
+        setPlayError(`Cannot play: ${track.title || track.fileName}`, track);
         // If in queue mode, skip to next
         if (queue.value.length > 0) {
             const idx = queue.value.findIndex((t) => t.id === track.id);
@@ -128,12 +131,14 @@ export function isAiff(track: TrackRow): boolean {
 
 // oxlint-disable-next-line max-lines-per-function, max-statements
 export function useAudioPlayer(): {
+    clearPlayError: () => void;
     currentTime: typeof currentTime;
     currentTrack: typeof currentTrack;
     duration: typeof duration;
     isPlaying: typeof isPlaying;
     play: (track: TrackRow) => Promise<void>;
     playError: typeof playError;
+    playErrorTrack: typeof playErrorTrack;
     playNext: () => void;
     playPrev: () => void;
     queue: typeof queue;
@@ -232,12 +237,14 @@ export function useAudioPlayer(): {
     }
 
     return {
+        clearPlayError,
         currentTime,
         currentTrack,
         duration,
         isPlaying,
         play,
         playError,
+        playErrorTrack,
         playNext,
         playPrev,
         queue,

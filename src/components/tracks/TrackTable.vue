@@ -43,17 +43,31 @@ const {
     activePlaylist,
     suggestedTracks,
     applySuggestedUpdate,
+    purgeTrack,
     removeTrack,
     hasRemovals,
     hasTrackEdits,
 } = usePlaylistView();
-const { scrollRequest, playError } = useAudioPlayer();
+const { scrollRequest, playError, playErrorTrack, clearPlayError } = useAudioPlayer();
 const { show: showContextMenu } = useContextMenu();
 const { confirm } = useConfirm();
 
 async function handleRemoveTrack(trackId: number): Promise<void> {
     const ok = await confirm('Remove this track from the playlist?', 'Remove');
     if (ok) removeTrack(trackId);
+}
+
+async function handleRemoveUnplayableTrack(): Promise<void> {
+    const track = playErrorTrack.value;
+    if (!track) return;
+    const ok = await confirm(
+        `Remove "${track.title || track.fileName}" from your collection?`,
+        'Remove Track',
+    );
+    if (!ok) return;
+    clearPlayError();
+    await tracksStore.deleteTrack(track.id);
+    purgeTrack(track.id);
 }
 const scrollContainer = ref<HTMLElement | null>(null);
 const sorting = ref<SortingState>([]);
@@ -636,6 +650,9 @@ watch(scrollRequest, (req) => {
             <template v-if="playError">
                 <span class="footer-drift-sep">·</span>
                 <span class="footer-warning-msg">{{ playError }}</span>
+                <button class="footer-drift-btn" @click="handleRemoveUnplayableTrack">
+                    Remove Track?
+                </button>
             </template>
             <template v-else-if="hasTrackEdits || hasRemovals">
                 <span class="footer-drift-sep">·</span>
