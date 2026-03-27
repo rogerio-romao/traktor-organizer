@@ -76,6 +76,7 @@ export function usePlaylistView(): {
     openPlaylist: (playlist: Playlist) => Promise<void>;
     playlistLoading: Ref<boolean>;
     playlistTracks: Ref<TrackRow[]>;
+    purgeTrack: (trackId: number) => void;
     removeTrack: (trackId: number) => void;
     suggestedTracks: Ref<TrackRow[] | null>;
     updatePlaylist: (trackIds: number[]) => Promise<void>;
@@ -122,6 +123,10 @@ export function usePlaylistView(): {
 
     function removeTrack(trackId: number): void {
         removedTrackIds.value = new Set([...removedTrackIds.value, trackId]);
+        playlistTracks.value = playlistTracks.value.filter((t) => t.id !== trackId);
+    }
+
+    function purgeTrack(trackId: number): void {
         playlistTracks.value = playlistTracks.value.filter((t) => t.id !== trackId);
     }
 
@@ -178,6 +183,7 @@ export function usePlaylistView(): {
         openPlaylist,
         playlistLoading,
         playlistTracks,
+        purgeTrack,
         removeTrack,
         suggestedTracks,
         updatePlaylist,

@@ -177,6 +177,12 @@ export const useTracksStore = defineStore('tracks', () => {
         }
     }
 
+    async function deleteTrack(trackId: number): Promise<void> {
+        const db = await getDb();
+        await db.execute('DELETE FROM tracks WHERE id = $1', [trackId]);
+        allTracks.value = allTracks.value.filter((t) => t.id !== trackId);
+    }
+
     function clearFilters(): void {
         globalSearch.value = '';
         activeTagFilters.value = [];
@@ -190,6 +196,7 @@ export const useTracksStore = defineStore('tracks', () => {
         addTagToTrack,
         allTracks,
         clearFilters,
+        deleteTrack,
         filteredTracks,
         genreFilter,
         globalSearch,
