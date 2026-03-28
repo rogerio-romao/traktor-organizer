@@ -195,7 +195,7 @@ const keys = computed(() => {
             title="Play all visible tracks"
             @click="setQueue(displayTracks)"
         >
-            ▶ Play all
+            <span class="play-icon-green">▶</span> Play all
         </button>
 
         <!-- In playlist mode: Update playlist button; otherwise: Save as playlist -->
@@ -367,5 +367,8 @@ const keys = computed(() => {
 .btn-update-playlist:disabled {
     opacity: 0.35;
     cursor: default;
+}
+.play-icon-green {
+    color: var(--success, #43a047);
 }
 </style>
