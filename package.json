@@ -27,7 +27,7 @@
         "@tauri-apps/plugin-dialog": "^2.6.0",
         "@tauri-apps/plugin-fs": "^2.4.5",
         "@tauri-apps/plugin-sql": "^2.3.2",
-        "fast-xml-parser": "^5.5.9",
+        "fast-xml-parser": "^5.7.0",
         "pinia": "^3.0.4",
         "vue": "^3.5.31",
         "vue-router": "^5.0.4"
